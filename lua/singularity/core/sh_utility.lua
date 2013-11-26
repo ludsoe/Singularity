@@ -70,11 +70,10 @@ function Utl:HookHook(Hook,Name,Func,Impo) --Makes the HookHook in the hook tabl
 		Func: The function called when the hook is called.
 		Impo: The Importance of the HookHook, this is for figuring out what we return to the hook from all HookHooks.
 	]]
-	if(not HTable[Hook][Name])then
-		HTable[Hook][Name]={N=Name,F=Func,I=Impo}
-	else
-		Utl:Debug("Hooks","There already is a HookHook in "..Hook.." for "..Name,"Error")
+	if(HTable[Hook][Name])then
+		Utl:Debug("Hooks","There already is a HookHook in "..Hook.." for "..Name.." overwriting!","Error")
 	end
+	HTable[Hook][Name]={N=Name,F=Func,I=Impo}
 end
 
 function Utl:KillHook(Name,Func) end --When we want to remove hooks from the table.
@@ -105,7 +104,13 @@ if(SERVER)then
 				if(T.S+T.D<CurTime())then --Check if its time to run the function.
 					local Remove,TR = false,T.R --Define some variables.
 					if(TR>0)then if(TR>1)then T.R=TR-1 else Remove=true end end --Repeat check.
-					xpcall(function() T.F() end,ErrorNoHalt) --Running the function.
+					xpcall(function()
+						if(T.F)then
+							T.F()
+						else
+							Utl:Debug("ThinkLoop",T.N.." has no function!","Error")
+						end
+					end,ErrorNoHalt) --Running the function.
 					if(Remove)then Thinks[I]=nil end --Removing ended functions.
 				end
 			end
@@ -122,6 +127,15 @@ if(SERVER)then
 		]]
 		Thinks[Name]={N=Name,S=CurTime(),D=Delay,R=Repeat,F=Function}
 	end
+	
+	Utl:MakeHook("PlayerSpawnedSENT") 
+	Utl:MakeHook("PlayerSpawnedNPC") 
+	Utl:MakeHook("PlayerSpawnedVehicle") 
+	Utl:MakeHook("PlayerSpawnedProp") 
+	Utl:MakeHook("PlayerSpawnedEffect")
+	Utl:MakeHook("PlayerSpawnedRagdoll") 
+	Utl:MakeHook("PlayerInitialSpawn") 
+	Utl:MakeHook("OnEntityCreated") 
 else
 
 end
