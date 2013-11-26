@@ -1,0 +1,10 @@
+"AddonInfo"
+{
+	"name"				"Singularity"
+	"version"			"1.0"
+	"up_date"			"2/27/2012"
+	"author_name"			"Ludsoe"
+	"author_email"			"Don't; Use steam."
+	"author_url"			"None yet"
+	"info"				""
+}
