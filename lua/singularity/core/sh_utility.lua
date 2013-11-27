@@ -102,6 +102,7 @@ if(SERVER)then
 		xpcall(function()
 			for I, T in pairs( Thinks ) do --Loop all the think functions.
 				if(T.S+T.D<CurTime())then --Check if its time to run the function.
+					T.S=CurTime()--Sets the time for the next run (If we have one) 
 					local Remove,TR = false,T.R --Define some variables.
 					if(TR>0)then if(TR>1)then T.R=TR-1 else Remove=true end end --Repeat check.
 					xpcall(function()
@@ -135,8 +136,60 @@ if(SERVER)then
 	Utl:MakeHook("PlayerSpawnedEffect")
 	Utl:MakeHook("PlayerSpawnedRagdoll") 
 	Utl:MakeHook("PlayerInitialSpawn") 
-	Utl:MakeHook("OnEntityCreated") 
+	Utl:MakeHook("OnEntityCreated")
+	Utl:MakeHook("OnRemove")
+
 else
 
 end
 
+--[[----------------------------------------------------
+Other Functions
+----------------------------------------------------]]--
+
+function Utl:CheckValid( entity )
+	if (not entity or not entity:IsValid()) then return false end
+	if (entity:IsWorld()) then return false end
+	if (not entity:GetPhysicsObject():IsValid()) then return false end
+	if (not entity:GetPhysicsObject():GetVolume()) then return false end
+	if (not entity:GetPhysicsObject():GetMass()) then return false end
+	return true
+end
+
+--[[----------------------------------------------------
+Constraint Functions.
+----------------------------------------------------]]--
+
+function constraint.GetAllWeldedEntities( ent, ResultTable ) --Modded constraint.GetAllConstrainedEntities to find only welded ents
+	local ResultTable = ResultTable or {}
+	if ( !ent ) then return end
+	if ( !ent:IsValid() ) then return end
+	if ( ResultTable[ ent ] ) then return end	
+	ResultTable[ ent ] = ent	
+	local ConTable = constraint.GetTable( ent )	
+	for k, con in ipairs( ConTable ) do	
+		for EntNum, Ent in pairs( con.Entity ) do
+			if (con.Type == "Weld") or (con.Type == "Axis") or (con.Type == "Ballsocket") or (con.Type == "Hydraulic") then
+				constraint.GetAllWeldedEntities( Ent.Entity, ResultTable )
+			end
+		end	
+	end
+	return ResultTable	
+end
+
+function constraint.GetAllConstrainedEntities_B( ent, ResultTable ) --Modded to filter out grabbers
+	local ResultTable = ResultTable or {}
+	if ( !ent ) then return end
+	if ( !ent:IsValid() ) then return end
+	if ( ResultTable[ ent ] ) then return end
+	ResultTable[ ent ] = ent
+	local ConTable = constraint.GetTable( ent )
+	for k, con in ipairs( ConTable ) do
+		for EntNum, Ent in pairs( con.Entity ) do
+			if con.Type != ""  then
+				constraint.GetAllWeldedEntities( Ent.Entity, ResultTable )
+			end
+		end
+	end
+	return ResultTable
+end

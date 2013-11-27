@@ -7,10 +7,10 @@ local Utl = Singularity.Utl --Makes it easier to read the code.
 SubSpaces = SubSpaces or {}
 SubSpaces.SubSpaces = SubSpaces.SubSpaces or {}
 SubSpaces.SubSpaceKeys = SubSpaces.SubSpaceKeys or {}
-SubSpaces.ThinkFuncs = SubSpaces.ThinkFuncs or {}
 
 SubSpaces.Center = Vector(0,0,0)
 SubSpaces.MapSize = 16000
+SubSpaces.MapSeed = 30303060
 SubSpaces.MainSpace = "MainSpace"
 SubSpaces.NullSpace = "NullSpace"
 
@@ -26,7 +26,9 @@ function ENT:SetSubSpace( subspace )
 	if(self:IsPlayer())then
 	
 	else
-		SubSpaces.SubSpaces[OldSub].Entitys[self:EntIndex()]=nil
+		if(OldSub~="")then
+			SubSpaces.SubSpaces[OldSub].Entitys[self:EntIndex()]=nil
+		end
 		SubSpaces.SubSpaces[subspace].Entitys[self:EntIndex()]=self
 	end
 	
@@ -39,12 +41,7 @@ function ENT:SetViewSubSpace( subspace )
 end
 
 function ENT:GetSubSpace()
-	if(SERVER)then
-		return self:GetNWString( "SubSpace",SubSpaces.MainSpace )
-	else
-		if ( !self:IsValid() ) then return SubSpaces.MainSpace end
-		return self:GetNWString( "SubSpace",SubSpaces.MainSpace )
-	end
+	return self:GetNWString( "SubSpace", "" )
 end
 
 function ENT:GetViewSubSpace()
@@ -183,10 +180,12 @@ if(SERVER)then
 	local Func = function()
 		for id, subspace in pairs( SubSpaces.SubSpaces ) do
 			if(not subspace.Importance)then --Make sure the subspace has a timed despawn.
-				if(subspace.Age+30<CurTime())then --Give subspaces that were just created time to fill with entities.
+				if(subspace.Age+3<CurTime())then --Give subspaces that were just created time to fill with entities.
 					local EntCount=table.Count(subspace.Entitys)
 					if(EntCount<=0)then --Make sure theres no entitys in the subspace.
 						SubSpaces:DestroyLayerByKey( id ) --Kill it.
+					else
+						subspace.Age=CurTime()--Give the subspace a longer life if it has entitys contained in it.
 					end
 				end
 			end
@@ -202,7 +201,7 @@ if(SERVER)then
 	util.AddNetworkString( "subspaces_destroyed" )
 	util.AddNetworkString( "subspaces_clearall" )
 	
-	function SubSpaces:SyncLayer(Name,SubSpace)
+	function SubSpaces:SyncSubSpace(Name,SubSpace)
 		print("syncing "..Name.." subspace")
 		net.Start( "subspaces_create" )
 			net.WriteString(Name)
@@ -216,7 +215,7 @@ if(SERVER)then
 		net.Start( "subspaces_clearall" )
 		net.Broadcast()
 		for id, subspace in pairs( SubSpaces.SubSpaces ) do
-			SubSpaces:SyncLayer(id,subspace)
+			SubSpaces:SyncSubSpace(id,subspace)
 		end	
 	end
 	
@@ -238,12 +237,15 @@ if(SERVER)then
 			SubSpace = {ID=Name, Owner = "World", Title = Name , Pos = Vect, Entitys={}, Age=CurTime() , Importance = Type}
 			SubSpaces.SubSpaces[Name]=SubSpace
 			
-			if(not Vect==Vector(0,0,0) or Name == SubSpaces.MainSpace)then
+			if(Vect~=Vector(0,0,0) or Name == SubSpaces.MainSpace)then
 				SubSpaces.SubSpaceKeys[tostring(Vect)]=SubSpaces.SubSpaces[Name] --Vector to subspace key link.
 			end
 			
-			SubSpaces:SyncLayer(Name,SubSpace)
+			SubSpaces:SyncSubSpace(Name,SubSpace)
 		else
+			if(Vect~=Vector(0,0,0))then
+				SubSpaces.SubSpaceKeys[tostring(Vect)]=SubSpaces.SubSpaces[Name] --Vector to subspace key link.
+			end
 			Utl:Debug("SubSpaces","Error Subspace: "..Name.." already exists!","Error")
 		end
 	end
@@ -368,8 +370,15 @@ if(SERVER)then
 
 	function SubSpaces.OnEntityCreated( ent )
 		ent:SetCustomCollisionCheck()
+		if(ent:GetSubSpace()=="")then
+			ent:SetSubSpace(SubSpaces.MainSpace)
+		end
 	end	
 
+	function SubSpaces.OnEntityRemove( ent )
+		SubSpaces.SubSpaces[ent:GetSubSpace()].Entitys[ent:EntIndex()]=nil
+	end
+	
 	Utl:HookHook("PlayerSpawnedSENT","SubSpace",SubSpaces.EntitySpawnLayer,1)
 	Utl:HookHook("PlayerSpawnedNPC","SubSpace",SubSpaces.EntitySpawnLayer,1)
 	Utl:HookHook("PlayerSpawnedVehicle","SubSpace",SubSpaces.EntitySpawnLayer,1)
@@ -378,6 +387,7 @@ if(SERVER)then
 	Utl:HookHook("PlayerSpawnedRagdoll","SubSpace",SubSpaces.EntitySpawnLayerProxy,1)
 	Utl:HookHook("PlayerInitialSpawn","SubSpace",SubSpaces.InitializePlayerLayer,1)
 	Utl:HookHook("OnEntityCreated","SubSpace",SubSpaces.OnEntityCreated,1)
+	Utl:HookHook("OnRemove","SubSpace",SubSpaces.OnEntityRemove,1)	
 	
 	if(not SubSpaces.OriginalAddCount)then
 		SubSpaces.OriginalAddCount = PLY.AddCount
@@ -488,15 +498,7 @@ else
 		local localLayer = LocalPlayer():GetViewSubSpace()
 		
 		for _, ent in ipairs( ents.GetAll() ) do
-			SubSpaces:SetEntityVisiblity( ent, localLayer )
-			
-			if ( ent.SubSpace and ent.SubSpace != ent:GetSubSpace() and ( ent.SubSpace != localLayer and ent:GetSubSpace() == localLayer ) or ( ent.SubSpace == localLayer and ent:GetSubSpace() != localLayer ) and !ent:GetOwner():IsValid() ) then
-				local ed = EffectData()
-				
-				ed:SetEntity( ent )
-				util.Effect( "entity_remove", ed, true, true )	
-			end
-			
+			SubSpaces:SetEntityVisiblity( ent, localLayer )			
 			ent.SubSpace = ent:GetSubSpace()
 		end
 	end
