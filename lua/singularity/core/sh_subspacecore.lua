@@ -281,7 +281,7 @@ if(SERVER)then
 				end
 			end
 			
-			STable = nil
+			SubSpaces.SubSpaces[Key] = nil
 		end
 	end
 	
@@ -379,6 +379,10 @@ if(SERVER)then
 		SubSpaces.SubSpaces[ent:GetSubSpace()].Entitys[ent:EntIndex()]=nil
 	end
 	
+	function SubSpaces.PlayerSpawn(ply)
+		ply:SetPos(Vector(0,0,0))
+	end
+	
 	Utl:HookHook("PlayerSpawnedSENT","SubSpace",SubSpaces.EntitySpawnLayer,1)
 	Utl:HookHook("PlayerSpawnedNPC","SubSpace",SubSpaces.EntitySpawnLayer,1)
 	Utl:HookHook("PlayerSpawnedVehicle","SubSpace",SubSpaces.EntitySpawnLayer,1)
@@ -388,6 +392,7 @@ if(SERVER)then
 	Utl:HookHook("PlayerInitialSpawn","SubSpace",SubSpaces.InitializePlayerLayer,1)
 	Utl:HookHook("OnEntityCreated","SubSpace",SubSpaces.OnEntityCreated,1)
 	Utl:HookHook("OnRemove","SubSpace",SubSpaces.OnEntityRemove,1)	
+	Utl:HookHook("PlayerSpawn","SubSpace",SubSpaces.PlayerSpawn,1)	
 	
 	if(not SubSpaces.OriginalAddCount)then
 		SubSpaces.OriginalAddCount = PLY.AddCount

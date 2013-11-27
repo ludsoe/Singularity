@@ -80,7 +80,8 @@ if(SERVER)then
 	end
 	
 	--Loads a contraption from entity data.
-	function Pers:LoadFromData(Vect,Data,Ply)
+	function Pers:LoadFromData(Vect,Data,Freeze)
+		if(not Data)then return end
 		local W,P,M,E,L = Data.Welds,Data.Props,Data.Meta,{},{}
 		
 		for ID, PD in pairs( P ) do
@@ -127,13 +128,15 @@ if(SERVER)then
 		for _, ent in pairs( E ) do
 			local Phys = ent:GetPhysicsObject()
 			if(Phys:IsValid())then
-				Phys:EnableMotion(true)
+				Phys:EnableMotion(Freeze or false)
 			end
 			
 			--[[if(ent.PostEntityPaste)then
 				ent:PostEntityPaste( Ply, ent, E )
 			end]]
 		end
+		
+		return E --Return the completed ship.
 	end
 	
 else

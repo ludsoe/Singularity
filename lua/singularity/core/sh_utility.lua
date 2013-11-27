@@ -137,6 +137,7 @@ if(SERVER)then
 	Utl:MakeHook("PlayerSpawnedRagdoll") 
 	Utl:MakeHook("PlayerInitialSpawn") 
 	Utl:MakeHook("OnEntityCreated")
+	Utl:MakeHook("PlayerSpawn")
 	Utl:MakeHook("OnRemove")
 
 else

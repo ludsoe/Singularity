@@ -15,10 +15,12 @@ function TOOL:LeftClick( tr )
 	if ( CLIENT ) then return true end
 	
 	local Data = Singularity.Persistance:GetShipData(tr.Entity) 
-	Singularity.Persistance:LoadFromData(Vector(0,0,0),Data,self:GetOwner())
-	
+	--Singularity.Persistance:LoadFromData(Vector(0,0,0),Data)
+	local Str=util.TableToJSON(Data)
+	file.Append( "localiseoutput.txt", Str )
 	return true
 end
 
 function TOOL:RightClick( tr )
 end
+

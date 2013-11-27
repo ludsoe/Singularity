@@ -1,3 +1,6 @@
+--[[----------------------------------------------------
+Cubic Universe System --Creates a larger universe by allowing players to move to differnt sectors.
+----------------------------------------------------]]--
 
 --Create ease links to the global table.
 local SubSpaces = SubSpaces
@@ -48,7 +51,7 @@ if(SERVER)then
 		end
 		local Velocity=Ent:GetVelocity()
 		
-		Ent:SetPos(Ent:GetPos()*Inverted)
+		Ent:SetPos(-Ent:GetPos())
 		Ent:SetVelocity(Velocity) --Carry the velocity over.
 		
 		Ent:SetSubSpace(SubSpace)
@@ -125,7 +128,7 @@ if(SERVER)then
 		for _, ent in ipairs( ents.GetAll() ) do
 			if(Utl:CheckValid(ent) and not SubSpaces:WarpImmune( ent ) and not ent:GetParent():IsValid())then
 				if(not ent.LastChecked or ent.LastChecked<CurTime())then --Makesure we didnt check this entity already
-					if(not ent:IsValid() or ent)then continue end
+					if(not ent:IsValid() or not ent)then continue end
 					
 					--Tell the entity we already checked it.
 					if(ent:IsConstrained())then
@@ -146,7 +149,7 @@ if(SERVER)then
 			end
 		end
 	end
-	Utl:SetupThinkHook("EntityScans",0.1,0,Func)
+	--Utl:SetupThinkHook("EntityScans",0.1,0,Func)
 else
 
 end
