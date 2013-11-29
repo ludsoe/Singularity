@@ -14,7 +14,7 @@ end
 
 function SubSpaces:LoadData()
 	print("Loading Data!")
-	local Folder = "singularity/data/"
+	local Folder = "singularity/data/prebuilt/"
 	for k,v in pairs(file.Find(Folder .. "*.lua","LUA")) do
 		local f = string.StripExtension( v )
 		if(f~="init")then

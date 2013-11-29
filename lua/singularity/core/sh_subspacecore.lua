@@ -23,15 +23,12 @@ local PLY = FindMetaTable( "Player" )
 function ENT:SetSubSpace( subspace )
 	local OldSub = self:GetSubSpace()
 	if(OldSub==subspace)then return end --Dont run if were trying to change to the same subspace
-	if(self:IsPlayer())then
-	
-	else
-		if(OldSub~="")then
-			SubSpaces.SubSpaces[OldSub].Entitys[self:EntIndex()]=nil
-		end
-		SubSpaces.SubSpaces[subspace].Entitys[self:EntIndex()]=self
+
+	if(OldSub~="")then
+		SubSpaces.SubSpaces[OldSub].Entitys[self:EntIndex()]=nil
 	end
-	
+	SubSpaces.SubSpaces[subspace].Entitys[self:EntIndex()]=self
+
 	self:SetNWString( "SubSpace", subspace )
 	if ( !self.UsingCamera ) then self:SetViewSubSpace( subspace ) end
 end
@@ -140,6 +137,7 @@ function SubSpaces.GetMapSize()
 		
 		tr.start = SubSpaces.Center
 		tr.endpos = SubSpaces.Center+(Dir*TraceDist)
+		tr.mask = 147467
 		
 		local Trace = util.TraceLine( tr,"")
 		local Dist = math.floor(SubSpaces.Center:Distance(Trace.HitPos))
@@ -169,7 +167,6 @@ end
 if(SERVER)then
 	Utl:SetupThinkHook("GetMapSize",10,1,function() SubSpaces.GetMapSize() end)--Because running it first things first caused crashs.
  
-	
 	--[[------------------------------------------------------------------------------------------------------------------
 		Serverside subspaces core
 	------------------------------------------------------------------------------------------------------------------]]--
@@ -275,9 +272,15 @@ if(SERVER)then
 			--Remove the vector key.
 			SubSpaces.SubSpaceKeys[tostring(STable.Pos)]=nil
 			
-			if(Protect)then
-				for ID, ent in pairs( STable.Entitys ) do
+			for ID, ent in pairs( STable.Entitys ) do
+				if(Protect)then
 					ent:SetSubSpace( SubSpaces.MainSpace )
+				else
+					if(ent:IsPlayer())then
+						ent:Kill() --Kill players causing them to respawn.
+					else
+						ent:Remove() --Remove entities.
+					end
 				end
 			end
 			
@@ -379,10 +382,6 @@ if(SERVER)then
 		SubSpaces.SubSpaces[ent:GetSubSpace()].Entitys[ent:EntIndex()]=nil
 	end
 	
-	function SubSpaces.PlayerSpawn(ply)
-		ply:SetPos(Vector(0,0,0))
-	end
-	
 	Utl:HookHook("PlayerSpawnedSENT","SubSpace",SubSpaces.EntitySpawnLayer,1)
 	Utl:HookHook("PlayerSpawnedNPC","SubSpace",SubSpaces.EntitySpawnLayer,1)
 	Utl:HookHook("PlayerSpawnedVehicle","SubSpace",SubSpaces.EntitySpawnLayer,1)
@@ -392,7 +391,6 @@ if(SERVER)then
 	Utl:HookHook("PlayerInitialSpawn","SubSpace",SubSpaces.InitializePlayerLayer,1)
 	Utl:HookHook("OnEntityCreated","SubSpace",SubSpaces.OnEntityCreated,1)
 	Utl:HookHook("OnRemove","SubSpace",SubSpaces.OnEntityRemove,1)	
-	Utl:HookHook("PlayerSpawn","SubSpace",SubSpaces.PlayerSpawn,1)	
 	
 	if(not SubSpaces.OriginalAddCount)then
 		SubSpaces.OriginalAddCount = PLY.AddCount

@@ -9,6 +9,7 @@ local Utl = Singularity.Utl --Makes it easier to read the code.
 Utl.ThinkLoop = {} --Create the think loop table.
 Utl.DebugTable = {} --Create the debug output storage.
 Utl.Hooks = {} --Create the hook table.
+Utl.Effect = {} --Create a table to store effect data in.
 
 local DTable = Utl.DebugTable --Localise the debug storage.
 local HTable = Utl.Hooks --Localise the hook table for speed.
@@ -19,16 +20,7 @@ Debugging Functions.
 
 --The Debug function, allows us to easily enable/disable debugging.
 function Utl:Debug(Source,String,Type)
-	local Time = tostring(os.date())
-	if(not DTable[Type])then DTable[Type]={} end
-	local TypeTab=DTable[Type] 
-	if(not TypeTab[Source])then TypeTab[Source]={} end
-	
-	table.insert(TypeTab[Source],Time..": "..String)
-
-	if(Singularity.Debug or Type=="Error")then
-		print("["..Type.."]: "..Source..": "..String)
-	end
+	print("["..Type.."]: "..Source..": "..String)
 end
 
 --[[----------------------------------------------------
@@ -139,9 +131,102 @@ if(SERVER)then
 	Utl:MakeHook("OnEntityCreated")
 	Utl:MakeHook("PlayerSpawn")
 	Utl:MakeHook("OnRemove")
+	Utl:MakeHook("Shutdown")
 
+	--[[----------------------------------------------------
+	Settings and File Functions.
+	----------------------------------------------------]]--
+	
+	local SettingsPath = Singularity.SaveDataPath..Singularity.SettingsName..".txt"
+	
+	if(not file.Exists(Singularity.SaveDataPath,"DATA"))then
+		file.CreateDir(Singularity.SaveDataPath)
+	end
+	
+	function Utl:LoadSettings()
+		Singularity.Settings = util.JSONToTable(file.Read(SettingsPath,"DATA") or "") or {}
+	end
+	Utl:LoadSettings()
+	
+	function Utl:SaveSettings()
+		file.Write(SettingsPath, util.TableToJSON({Settings = Singularity.Settings}))
+	end
+	
+	Utl:HookHook("Shutdown","SettingsSave",Utl.SaveSettings,1)
+	
+	--[[----------------------------------------------------
+	Serverside Effect Handling.
+	----------------------------------------------------]]--
+	util.AddNetworkString( "sing_sendeffectbase" )
+	util.AddNetworkString( "sing_sendeffectdata" )
+	util.AddNetworkString( "sing_requesteffectdata" )
+	
+	--Sends the base data of the effect.
+	function Utl:SendEffectData(ply,Data)
+		local Name = ply:Nick()
+		if(not Utl.Effect[Name])then Utl.Effect[Name]={} end
+		
+	end
+	
+	--Sends the real effect data.
+	net.Receive( "sing_requesteffectdata", function( length, client )
+        
+	end )
+	
+	--Packages the effect up and prepares to send it.
+	function Utl:CreateEffect(Name,)
+		
+	end	
+	
 else
-
+	--[[----------------------------------------------------
+	ClientSide Effect Handling.
+	----------------------------------------------------]]--
+	Utl.NetDataTypes = {"S"=net.ReadString,"E"=net.ReadEntity,"F"=net.ReadFloat,"V"=net.ReadVector,"A"=net.ReadAngle}
+	
+	function Utl:RenderEffect(D)
+		--[[
+			Add Effect calling code here.
+		]]
+	end
+	
+	--Recieves the base data of the effect, and requests the rest.
+	net.Receive( "sing_sendeffectbase", function( length )
+		
+		local Name = net.ReadString() --Gets the name of the effect.
+		local Count = net.ReadFloat() --Get the amount of variables were recieving.
+		
+		local D = {}
+		for(I=1,Count)do --Read all the variables.
+			D[I]=net.ReadString()
+		end
+		Utl.Effect[Name]=D --Give the global effect table our D!
+		
+		--Request the real effect data.
+		net.Start( "sing_requesteffectdata" )
+		net.SendToServer()
+	end )
+	
+	--Recieves the real effect data, and sends it off to be rendered.
+	net.Receive( "sing_sendeffectdata", function( length )
+        local Name = net.ReadString()
+		
+		if(Utl.Effect[Name])then --Do we have data for it?
+			local D = Utl.Effect[Name]
+			
+			local E = {}
+			for I, S in pairs( D ) do --Loop all the variables.
+				local N = net.ReadString()--Get the variable name.
+				E[N]=Utl.NetDataTypes[S]--Get the variable data.
+			end
+			Utl:RenderEffect(E)--Send it off to be rendered.
+			
+			Utl.Effect[Name]=nil --Nil the effect, no reason to keep outdated data.
+		else
+			Utl:Debug("EffectSys","Recieving effect data from none synced "..Name,"ERROR") --Oopsie
+		end
+	end )
+	
 end
 
 --[[----------------------------------------------------

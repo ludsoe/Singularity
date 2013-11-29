@@ -149,7 +149,7 @@ if(SERVER)then
 			end
 		end
 	end
-	--Utl:SetupThinkHook("EntityScans",0.1,0,Func)
+	Utl:SetupThinkHook("EntityScans",0.1,0,Func)
 else
 
 end

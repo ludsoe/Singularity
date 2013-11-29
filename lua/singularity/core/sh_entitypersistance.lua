@@ -20,8 +20,6 @@ if(SERVER)then
 		Data.S=Ent:GetSkin()
 		Data.C=Ent:GetColor()
 		Data.P=Ent:GetParent():EntIndex()
-		--if(Ent.PreEntityCopy)then Ent:PreEntityCopy() end
-		Data.Mods=Ent.EntityMods or {} --Normal Duplicator Support
 		
 		--Get entity persistant data.
 		if(Ent.GetPersData)then
@@ -73,14 +71,14 @@ if(SERVER)then
 		local K1,K2 = D.E1,D.E2
 
 		if(T=="Weld")then
-			constraint.Weld( E[K1], E[K2], 0, 0, D.f)
+			constraint.Weld( E[K1], E[K2], 0, 0, D.f,true)
 		elseif(T=="Rope")then
 			constraint.Rope( E[K1], E[K2], 1, 1, D.E.P1, D.E.P2, D.E.l, 0, D.f, D.E.w, D.E.m, false)
 		end
 	end
 	
 	--Loads a contraption from entity data.
-	function Pers:LoadFromData(Vect,Data,Freeze)
+	function Pers:LoadFromData(Vect,Data,Freeze,Owner)
 		if(not Data)then return end
 		local W,P,M,E,L = Data.Welds,Data.Props,Data.Meta,{},{}
 		
@@ -93,8 +91,8 @@ if(SERVER)then
 			ent:SetColor(PD.C)
 			ent:SetSkin(PD.S)
 			ent:SetSubSpace(SubSpaces.MainSpace)
-			ent.EntityMods=PD.Mods
-						
+			ent.UnTouchable = true
+			
 			if(PD.P~=0)then
 				L[ID]=function()
 					ent:SetParent(E[PD.P])
@@ -130,10 +128,6 @@ if(SERVER)then
 			if(Phys:IsValid())then
 				Phys:EnableMotion(Freeze or false)
 			end
-			
-			--[[if(ent.PostEntityPaste)then
-				ent:PostEntityPaste( Ply, ent, E )
-			end]]
 		end
 		
 		return E --Return the completed ship.
