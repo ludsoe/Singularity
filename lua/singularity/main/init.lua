@@ -22,4 +22,9 @@ if(SERVER)then
 else
 
 end
- 
+
+local MainF = "singularity/main/"
+include(MainF.."lde_spacecraft.lua")
+if(SERVER)then
+	AddCSLuaFile(MainF.."lde_spacecraft.lua")
+end
