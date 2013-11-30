@@ -51,7 +51,7 @@ if(SERVER)then
 		end
 		local Velocity=Ent:GetVelocity()
 		
-		Ent:SetPos(-Ent:GetPos())
+		Ent:SetPos(Ent:GetPos()*Inverted)
 		Ent:SetVelocity(Velocity) --Carry the velocity over.
 		
 		Ent:SetSubSpace(SubSpace)

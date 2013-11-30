@@ -31,6 +31,7 @@ function ENT:SetSubSpace( subspace )
 	SubSpaces.SubSpaces[subspace].Entitys[self:EntIndex()]=self
 
 	self:SetNWString( "SubSpace", subspace )
+	self:SetNWVector( "UniPos", SubSpaces.SubSpaces[subspace].Pos or Vector(0,0,0) )
 	if ( !self.UsingCamera ) then self:SetViewSubSpace( subspace ) end
 end
 
@@ -40,6 +41,10 @@ end
 
 function ENT:GetSubSpace()
 	return self:GetNWString( "SubSpace", "" )
+end
+
+function ENT:GetUniPos()
+	return self:GetNWVector( "UniPos", Vector(0,0,0) )
 end
 
 function ENT:GetViewSubSpace()
@@ -411,9 +416,8 @@ if(SERVER)then
 else	
 	--SubSpaces.SubSpaces = SubSpaces.SubSpaces or {}
 	net.Receive( "subspaces_create", function( length, client )
+		local id, title, owner, pos = net.ReadString(), net.ReadString(), net.ReadString(), net.ReadVector()
 		if ( SubSpaces.layerList ) then
-			local id, title, owner, pos = net.ReadString(), net.ReadString(), net.ReadString(), net.ReadVector()
-			
 			if ( owner == LocalPlayer() ) then
 				SubSpaces.layerList.HasLayer = true
 				SubSpaces.layerList.CreateButton:SetText( "Remove your subspace" )
@@ -423,10 +427,10 @@ else
 				print("SubSpace already synced.")
 			else
 				SubSpaces.layerList:AddLayer( id, title, owner, pos )
-				SubSpaces.SubSpaces[id]={Owner=owner,Title=Title,Pos=pos}
 			end
-			
-		end		
+		end
+		SubSpaces.SubSpaces[id]={Owner=owner,Title=Title,Pos=pos}
+		print(id.." is synced now clientside.")
 	end )
 	
 	net.Receive( "subspaces_clearall", function( length, client )
@@ -469,16 +473,18 @@ else
 	------------------------------------------------------------------------------------------------------------------]]--
 
 	function SubSpaces:SetEntityVisiblity( ent, subspace )
-		if ( ent:EntIndex() < 0 or !ent:IsValid() ) then return end
+		if ( ent:EntIndex() < 0 or not ent:IsValid() ) then return end
 		
 		local visible = false
+		local isprop = false
 		
 		if ( ent:GetOwner():IsValid() ) then
 			visible = ent:GetOwner():GetSubSpace() == subspace
 		elseif ( ent:GetClass() == "class C_RopeKeyframe" ) then
 			visible = ent:GetNWEntity( "CEnt", ent ):GetSubSpace() == subspace
 		else
-			visible = ent:GetSubSpace() == subspace
+			visible = (ent:GetSubSpace() == subspace)
+			isprop = true
 		end
 		
 		if ( ent:GetClass() == "class C_RopeKeyframe" ) then
@@ -488,16 +494,17 @@ else
 				ent:SetColor( 255, 255, 255, 0 )
 			end
 		else
-			ent:SetNoDraw( !visible )
-			
-			if ( visible and !ent.LayerVisibility ) then
-				ent:CreateShadow()
+			if(isprop)then
+				if(not visible)then
+					local effectdata = EffectData()
+					effectdata:SetEntity( ent )
+					util.Effect( "skyboxent", effectdata )
+				end
 			end
+			ent:SetNoDraw( not visible ) --Make it invisible.
 		end
-		
-		ent.LayerVisibility = visible
 	end
-
+	
 	function SubSpaces.RenderEntities()
 		local localLayer = LocalPlayer():GetViewSubSpace()
 		
@@ -506,7 +513,7 @@ else
 			ent.SubSpace = ent:GetSubSpace()
 		end
 	end
-	hook.Add( "RenderScene", "LayersEntityDrawing", SubSpaces.RenderEntities )
+	hook.Add( "RenderScene", "SingularityEntityDrawing", SubSpaces.RenderEntities )
 	
 	if(not SubSpaces.oldEmitSound)then
 		SubSpaces.oldEmitSound = ENT.EmitSound
