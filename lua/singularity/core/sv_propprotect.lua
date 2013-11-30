@@ -1,5 +1,6 @@
 local Singularity = Singularity --Localise the global table for speed.
 Singularity.PropProtect = Singularity.PropProtect or {}
+local PropProtect = Singularity.PropProtect --SPEEEEEEED BOOOOOOST!!!!
 
 function PropProtect.PlayerCanTouch(ply, ent)
 	if(ent:IsWorld())then return true end

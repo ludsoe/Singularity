@@ -9,6 +9,7 @@ SubSpaces.SubSpaces = SubSpaces.SubSpaces or {}
 SubSpaces.SubSpaceKeys = SubSpaces.SubSpaceKeys or {}
 
 SubSpaces.Center = Vector(0,0,0)
+SubSpaces.SkyBox = Vector(0,0,-14144)
 SubSpaces.MapSize = 16000
 SubSpaces.MapSeed = 30303060
 SubSpaces.MainSpace = "MainSpace"

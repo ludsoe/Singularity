@@ -174,7 +174,7 @@ if(SERVER)then
 	end )
 	
 	--Packages the effect up and prepares to send it.
-	function Utl:CreateEffect(Name,)
+	function Utl:CreateEffect(Name,Data)
 		
 	end	
 	
@@ -182,7 +182,7 @@ else
 	--[[----------------------------------------------------
 	ClientSide Effect Handling.
 	----------------------------------------------------]]--
-	Utl.NetDataTypes = {"S"=net.ReadString,"E"=net.ReadEntity,"F"=net.ReadFloat,"V"=net.ReadVector,"A"=net.ReadAngle}
+	Utl.NetDataTypes = {S=net.ReadString,E=net.ReadEntity,F=net.ReadFloat,V=net.ReadVector,A=net.ReadAngle}
 	
 	function Utl:RenderEffect(D)
 		--[[
@@ -197,7 +197,7 @@ else
 		local Count = net.ReadFloat() --Get the amount of variables were recieving.
 		
 		local D = {}
-		for(I=1,Count)do --Read all the variables.
+		for I=1,Count do --Read all the variables.
 			D[I]=net.ReadString()
 		end
 		Utl.Effect[Name]=D --Give the global effect table our D!
@@ -205,7 +205,7 @@ else
 		--Request the real effect data.
 		net.Start( "sing_requesteffectdata" )
 		net.SendToServer()
-	end )
+	end ) 
 	
 	--Recieves the real effect data, and sends it off to be rendered.
 	net.Receive( "sing_sendeffectdata", function( length )
