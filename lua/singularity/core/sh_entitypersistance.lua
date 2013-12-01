@@ -26,6 +26,12 @@ if(SERVER)then
 			Data.E=Ent:GetPersData()
 		end
 		
+		if(Ent.PreEntityCopy)then
+			Ent:PreEntityCopy()
+			Data.W=Ent.EntityMods
+			PrintTable(Data.W)
+		end
+		
 		Props[Ent:EntIndex()]=Data
 	end
 	
@@ -104,6 +110,10 @@ if(SERVER)then
 				ent:SetPersData(PD.E)
 			end		
 			
+			if(PD.W)then
+				ent.EntityMods=PD.W
+			end
+			
 			ent:Spawn()
 			
 			local Phys = ent:GetPhysicsObject()
@@ -127,6 +137,9 @@ if(SERVER)then
 			local Phys = ent:GetPhysicsObject()
 			if(Phys:IsValid())then
 				Phys:EnableMotion(Freeze or false)
+			end
+			if(ent.EntityMods)then
+				ent:PostEntityPaste(Owner,ent,E)
 			end
 		end
 		
