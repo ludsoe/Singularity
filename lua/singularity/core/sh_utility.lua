@@ -83,44 +83,47 @@ function Utl:MakeHook(Name) --Make the hookhook storage.
 end	
 
 --[[----------------------------------------------------
-NonShared Utility Functions.
+MasterThink Loop
 ----------------------------------------------------]]--
 
-if(SERVER)then
-	local Thinks = Utl.ThinkLoop --Faster Access to the think loop table.
-	
-	--Our Think Loop, Processes all the functions in one place.
-	hook.Add("Think","SingularityMainLoop",function()
-		xpcall(function()
-			for I, T in pairs( Thinks ) do --Loop all the think functions.
-				if(T.S+T.D<CurTime())then --Check if its time to run the function.
-					T.S=CurTime()--Sets the time for the next run (If we have one) 
-					local Remove,TR = false,T.R --Define some variables.
-					if(TR>0)then if(TR>1)then T.R=TR-1 else Remove=true end end --Repeat check.
-					xpcall(function()
-						if(T.F)then
-							T.F()
-						else
-							Utl:Debug("ThinkLoop",T.N.." has no function!","Error")
-						end
-					end,ErrorNoHalt) --Running the function.
-					if(Remove)then Thinks[I]=nil end --Removing ended functions.
-				end
-			end
-		end,ErrorNoHalt)
-	end)
+local Thinks = Utl.ThinkLoop --Faster Access to the think loop table.
 
-	--Function for easily adding into the main think loop.
-	function Utl:SetupThinkHook(Name,Delay,Repeat,Function)
-		--[[
-			Name: Name of the function.
-			Delay: The time it waits before being ran. (Resets after each run.)
-			Repeat: How many times the function repeats before being removed.
-			Function: The function thats called.
-		]]
-		Thinks[Name]={N=Name,S=CurTime(),D=Delay,R=Repeat,F=Function}
-	end
-	
+--Our Think Loop, Processes all the functions in one place.
+hook.Add("Think","SingularityMainLoop",function()
+	xpcall(function()
+		for I, T in pairs( Thinks ) do --Loop all the think functions.
+			if(T.S+T.D<CurTime())then --Check if its time to run the function.
+				T.S=CurTime()--Sets the time for the next run (If we have one) 
+				local Remove,TR = false,T.R --Define some variables.
+				if(TR>0)then if(TR>1)then T.R=TR-1 else Remove=true end end --Repeat check.
+				xpcall(function()
+					if(T.F)then
+						T.F()
+					else
+						Utl:Debug("ThinkLoop",T.N.." has no function!","Error")
+					end
+				end,ErrorNoHalt) --Running the function.
+				if(Remove)then Thinks[I]=nil end --Removing ended functions.
+			end
+		end
+	end,ErrorNoHalt)
+end)
+
+--Function for easily adding into the main think loop.
+function Utl:SetupThinkHook(Name,Delay,Repeat,Function)
+	--[[
+		Name: Name of the function.
+		Delay: The time it waits before being ran. (Resets after each run.)
+		Repeat: How many times the function repeats before being removed.
+		Function: The function thats called.
+	]]
+	Thinks[Name]={N=Name,S=CurTime(),D=Delay,R=Repeat,F=Function}
+end
+
+--[[----------------------------------------------------
+NonShared Utility Functions.
+----------------------------------------------------]]--
+if(SERVER)then	
 	Utl:MakeHook("PlayerSpawnedSENT") 
 	Utl:MakeHook("PlayerSpawnedNPC") 
 	Utl:MakeHook("PlayerSpawnedVehicle") 

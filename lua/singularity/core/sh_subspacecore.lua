@@ -170,9 +170,10 @@ function SubSpaces.GetMapSize()
 	print("I Think the Map Size is "..Dist)
 end
 
+Utl:SetupThinkHook("GetMapSize",10,1,function() SubSpaces.GetMapSize() end)--Because running it first things first caused crashs.
+
 if(SERVER)then
-	Utl:SetupThinkHook("GetMapSize",10,1,function() SubSpaces.GetMapSize() end)--Because running it first things first caused crashs.
- 
+	
 	--[[------------------------------------------------------------------------------------------------------------------
 		Serverside subspaces core
 	------------------------------------------------------------------------------------------------------------------]]--

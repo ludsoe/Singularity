@@ -32,4 +32,6 @@ LoadFile(DataF.."init.lua")
 LoadFile(MainF.."init.lua")
 if(SERVER)then include(CoreF.."sv_propprotect.lua") end
 
+LoadFile(CoreF.."emptylua.lua")
+
 print("Singularity AutoRun Finished! Took "..(SysTime()-StartTime).."'s to load.")
