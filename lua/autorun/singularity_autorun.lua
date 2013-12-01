@@ -16,13 +16,14 @@ local DataF = "singularity/data/"
 local MainF = "singularity/main/"
 
 --Ease Function to load files both serverside and client side.
-local function LoadFile(Path)
+function Singularity.LoadFile(Path)
 	print("*Loading "..Path)
 	include(Path)
 	if(SERVER)then
 		AddCSLuaFile(Path)
 	end
 end
+local LoadFile = Singularity.LoadFile
 
 LoadFile(CoreF.."sh_utility.lua")
 LoadFile(CoreF.."sh_entitypersistance.lua")

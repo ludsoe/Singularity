@@ -11,6 +11,8 @@ SubSpaces.SubSpaceKeys = SubSpaces.SubSpaceKeys or {}
 SubSpaces.Center = Vector(0,0,0)
 SubSpaces.SkyBox = Vector(0,0,-14144)
 SubSpaces.MapSize = 16000
+SubSpaces.SkySize = SubSpaces.MapSize/128
+SubSpaces.Scale = 128
 SubSpaces.MapSeed = 30303060
 SubSpaces.MainSpace = "MainSpace"
 SubSpaces.NullSpace = "NullSpace"
@@ -123,8 +125,8 @@ function util.GetPlayerTrace( ply, dir )
 	return originalResult
 end
  
- ---Function to grab the maps size using raytracing and guessing.
-function SubSpaces.GetMapSize()
+ --Function to grab the maps size using raytracing and guessing.
+function SubSpaces.GetAreaSize(Vec)
 	local Directions = {
 		Up=Vector(0,0,1),
 		Down=Vector(0,0,-1),
@@ -141,12 +143,12 @@ function SubSpaces.GetMapSize()
 		local tr = {}
 		local TraceDist = 300000
 		
-		tr.start = SubSpaces.Center
-		tr.endpos = SubSpaces.Center+(Dir*TraceDist)
+		tr.start = Vec
+		tr.endpos = Vec+(Dir*TraceDist)
 		tr.mask = 147467
 		
 		local Trace = util.TraceLine( tr,"")
-		local Dist = math.floor(SubSpaces.Center:Distance(Trace.HitPos))
+		local Dist = math.floor(Vec:Distance(Trace.HitPos))
 		local Key = tostring(Dist)
 		if(Lengths[Key])then
 			Lengths[Key]=Lengths[Key]+1
@@ -164,10 +166,18 @@ function SubSpaces.GetMapSize()
 			DCou=Num
 		end
 	end
+	--print("I Think the Area Size is "..Dist)
 	
-	SubSpaces.MapSize=Dist
+	return Dist
+end
+
+function SubSpaces.GetMapSize()
+	SubSpaces.MapSize=SubSpaces.GetAreaSize(SubSpaces.Center)
+	SubSpaces.SkySize=SubSpaces.GetAreaSize(SubSpaces.SkyBox)
 	
-	print("I Think the Map Size is "..Dist)
+	print("Map Size "..SubSpaces.MapSize)
+	print("Sky Size "..SubSpaces.SkySize)
+	print("Scale "..SubSpaces.Scale)
 end
 
 Utl:SetupThinkHook("GetMapSize",10,1,function() SubSpaces.GetMapSize() end)--Because running it first things first caused crashs.
@@ -477,7 +487,6 @@ else
 		if ( ent:EntIndex() < 0 or not ent:IsValid() ) then return end
 		
 		local visible = false
-		local isprop = false
 		
 		if ( ent:GetOwner():IsValid() ) then
 			visible = ent:GetOwner():GetSubSpace() == subspace
@@ -485,7 +494,6 @@ else
 			visible = ent:GetNWEntity( "CEnt", ent ):GetSubSpace() == subspace
 		else
 			visible = (ent:GetSubSpace() == subspace)
-			isprop = true
 		end
 		
 		if ( ent:GetClass() == "class C_RopeKeyframe" ) then
@@ -495,12 +503,10 @@ else
 				ent:SetColor( 255, 255, 255, 0 )
 			end
 		else
-			if(isprop)then
-				if(not visible)then
-					local effectdata = EffectData()
-					effectdata:SetEntity( ent )
-					util.Effect( "skyboxent", effectdata )
-				end
+			if(not visible)then
+				local effectdata = EffectData()
+				effectdata:SetEntity( ent )
+				util.Effect( "skyboxent", effectdata )
 			end
 			ent:SetNoDraw( not visible ) --Make it invisible.
 		end

@@ -22,7 +22,6 @@ function Singularity.SpaceCraft.CreateWing(self,Body,Model,Pos,Angles)
 	Wing:SetLocalAngles(Angles)
 	Wing:SetSolid( 0 )
 	Wing.IsSpaceCraft = true
-	table.insert(self.Parts,Wing)
 	
 	local phys = Wing:GetPhysicsObject()
 	if (phys:IsValid()) then
@@ -48,7 +47,6 @@ function Singularity.SpaceCraft.MakeSpaceC(Data)
 	ENT.Data = Data
 
 	if SERVER then
-
 		function ENT:Initialize()   
 
 			self:SetModel( "models/props_junk/PopCan01a.mdl" ) 
@@ -67,9 +65,7 @@ function Singularity.SpaceCraft.MakeSpaceC(Data)
 			end
 			self:SetKeyValue("rendercolor", "255 255 255")
 			self.PhysObj = self:GetPhysicsObject()
-			
-			self.Parts = {}
-			
+						
 			self.SingMove = {
 			Turn={Roll=0,Pitch=0,Yaw=0},
 			DTurn={Roll=0,Pitch=0,Yaw=0},
@@ -83,7 +79,7 @@ function Singularity.SpaceCraft.MakeSpaceC(Data)
 			
 			Body = ents.Create( "prop_vehicle_prisoner_pod" )
 			Body:SetModel( self.Data.model ) 
-			Body:SetPos( self:GetPos() + self:GetForward() * 150 + self:GetUp() * -50 )
+			Body:SetPos( self:GetPos() )
 			Body:SetAngles(self:GetAngles())
 			Body:Spawn()
 			Body:Activate()
@@ -93,12 +89,11 @@ function Singularity.SpaceCraft.MakeSpaceC(Data)
 				TB.HandleAnimation = function (vec, ply)
 				return ply:SelectWeightedSequence( ACT_HL2MP_SIT ) 
 			end 
-			Body:SetLocalPos(Vector(-55,0,38))
+			Body:SetLocalPos(Vector(-0,0,0))
 			Body:SetLocalAngles(Angle(0,0,0))
 			Body.Singularity = {Core=self}
 			Body.IsSpaceCraft = true
 			self.Body = Body
-			table.insert(self.Parts,Body)
 			self:SetParent(Body)
 			local Weld = constraint.Weld(self,Body)
 			
@@ -111,13 +106,13 @@ function Singularity.SpaceCraft.MakeSpaceC(Data)
 				phys:SetMass( 1000 )
 			end
 
-			self:SetNetworkedEntity("Pod",self.Body,true)			
+			self:SetNWEntity("Pod",self.Body)			
 			
 			self.Data.Setup(self,Body)
 		end
 		
 		function ENT:Think()
-			--self.Entity:SetColor( 0, 0, 255, 255)
+			
 			local Phys = self.Body:GetPhysicsObject()
 
 			if self.Body and self.Body:IsValid() then
@@ -126,7 +121,10 @@ function Singularity.SpaceCraft.MakeSpaceC(Data)
 				if self.CPL and self.CPL:IsValid() then
 					self.AMul = 1
 					self.Active = true
-
+					if(not self:GetNWBool("Active"))then
+						self:SetNWBool( "Active", true )
+					end
+					
 					self.Data.flythink(self)--Call the fly think function inside our data class
 				else
 					self.SingMove.DThrust = 0
@@ -137,7 +135,9 @@ function Singularity.SpaceCraft.MakeSpaceC(Data)
 					self.SingMove.AMul = 0
 					self.OPAng = nil
 					self.Active = false
-					self.CPLsuitcheck = true
+					if(self:GetNWBool("Active"))then
+						self:SetNWBool( "Active", false )
+					end
 				end
 			else
 				
@@ -149,8 +149,6 @@ function Singularity.SpaceCraft.MakeSpaceC(Data)
 			if self.SingMove.Thrust > self.SingMove.DThrust then
 				TSpeed = 50
 			end
-			--self.VThrust = math.Approach(self.VThrust, self.DVThrust * self.TMul, VTSpeed)
-			--self.Strafe = math.Approach(self.Strafe, self.DStrafe, 1.5)
 
 			--This is where we do the speed up and slow down logic.
 			self.SingMove.Thrust = math.Approach(self.SingMove.Thrust, self.SingMove.DThrust * self.SingMove.TMul, TSpeed)
@@ -190,9 +188,50 @@ function Singularity.SpaceCraft.MakeSpaceC(Data)
 		end
 
 	else
-		ENT.RenderGroup = RENDERGROUP_OPAQUE
-
-		--Client stuff ;)
+		function ENT:Draw()
+			return false
+		end
+		
+		function ENT:Think()
+			local Active = self:GetNWBool("Active")
+			local Body = self:GetNWEntity("Pod")
+			
+			if(not Engine and Active)then
+				if self.HighEngineSound or self.LowDroneSound then
+					self.HighEngineSound:Stop()
+					self.LowDroneSound:Stop()
+				end 
+				self.HighEngineSound = CreateSound(Body, Sound("ambient/atmosphere/outdoor2.wav"))
+				self.LowDroneSound = CreateSound(Body, Sound("ambient/atmosphere/indoor1.wav"))
+				self.HighEngineSound:Play()
+				self.LowDroneSound:Play()
+				Engine=true
+			elseif(not Active)then
+				if self.HighEngineSound or self.LowDroneSound then
+					self.HighEngineSound:Stop()
+					self.LowDroneSound:Stop()
+				end
+				Engine=false
+			end
+			
+			if(Active and Engine)then
+				local speedmph = Body:GetVelocity():Length()
+				if speedmph > 80 then  --changing sounds based on speed
+					self.HighEngineVolume = math.Clamp(((speedmph * 0.015)-2.6), 0, 1)
+				else
+					self.HighEngineVolume = speedmph * 0.0015
+				end
+				self.HighEnginePitch = (speedmph * 0.2) + 10
+				self.LowDronePitch = 5+(speedmph * 0.05)
+				if(self.HighEngineSound and self.LowDroneSound)then
+					self.HighEngineSound:ChangeVolume(self.HighEngineVolume, 0)
+					self.HighEngineSound:ChangePitch(math.Clamp(self.HighEnginePitch, 0, 255), 0)
+					self.LowDroneSound:ChangePitch(math.Clamp(self.LowDronePitch, 0, 255), 0)
+				end
+			end
+		end
+		
+		--Client stuff ;) 
 	end
 	scripted_ents.Register(ENT, Data.class.."_spacecraft", true, false)
 	print("SpaceShip Class Registered: "..Data.class)
@@ -222,9 +261,9 @@ local FlyThink = function(self)
 	end
 	
 	if self.CPL:KeyDown( IN_BACK ) then
-		self.SingMove.DThrust = -10 ---math.Clamp(self:GetUp():DotProduct( Phys:GetVelocity() ) , -5 , -1.2 ) * -4
+		self.SingMove.DThrust = -60 ---math.Clamp(self:GetUp():DotProduct( Phys:GetVelocity() ) , -5 , -1.2 ) * -4
 	elseif self.CPL:KeyDown( IN_FORWARD ) then
-		self.SingMove.DThrust = 60
+		self.SingMove.DThrust = 120
 	else
 		self.SingMove.DThrust = 0
 	end

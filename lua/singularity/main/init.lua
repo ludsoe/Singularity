@@ -24,7 +24,7 @@ else
 end
 
 local MainF = "singularity/main/"
-include(MainF.."lde_spacecraft.lua")
-if(SERVER)then
-	AddCSLuaFile(MainF.."lde_spacecraft.lua")
-end
+
+Singularity.LoadFile(MainF.."lde_spacecraft.lua")
+Singularity.LoadFile(MainF.."sh_universe.lua")
+
