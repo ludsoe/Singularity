@@ -29,7 +29,12 @@ function EFFECT:Init(data)
 	self:SetAngles(ent:GetAngles())
 	self:SetSkin(ent:GetSkin())
 	self:SetColor(ent:GetColor())
-	self:SetModelScale(1/SubSpaces.Scale,0)
+	
+	local Scale = 1/SubSpaces.Scale
+	if(ent.Scale)then
+		Scale = (ent.Scale*10)/SubSpaces.Scale
+	end
+	self:SetModelScale(Scale,0)
 	
 	local Spot = (Pos+((SubSpaces.MapSize*1.5)*SubPos))/SubSpaces.Scale
 	

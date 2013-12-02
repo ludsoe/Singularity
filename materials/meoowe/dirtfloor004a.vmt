@@ -1,0 +1,9 @@
+"VertexLitGeneric"
+{
+"$basetexture" "Nature\dirtfloor004a"
+"$envmap" "env_cubemap"
+"$basealphaenvmapmask" 0.4
+"$envmapcontrast" 0.4
+"$envmapsaturation" 0.4
+"$envmaptint" "[ .4 .4 .4]"
+}
