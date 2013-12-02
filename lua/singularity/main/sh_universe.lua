@@ -39,7 +39,7 @@ end
 if(SERVER)then
 	util.AddNetworkString( "universe_setscale" )
 	
-	function Universe.GeneratePlanet(Vec,Scale,SubSpace,Data)
+	function Universe.BuildPlanet(Vec,Scale,SubSpace,Data)
 		local planet = ents.Create( "sing_planet" )
 		planet:SetPos(Vec)
 		planet:SetAngles( Angle( 0, 0, 0 ) )
@@ -62,6 +62,21 @@ if(SERVER)then
 		atmos:SetupAtmosphere(Scale)
 		Universe.ScaleEntity(atmos,Scale)
 	end
+
+	function Universe.LoadPlanet() end
+	function Universe.SavePlanet() end
+	
+	function Universe.GeneratePlanet() end
+	
+	
+	function Universe.GenerateStar() end
+	
+	
+	function Universe.LoadSystem() end
+	function Universe.SaveSystem() end
+	
+	function Universe.GenerateSystem() end
+	
 	
 else
 	net.Receive( "universe_setscale", function( length, client )
