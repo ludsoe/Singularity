@@ -1,14 +1,80 @@
 --[[----------------------------------------------------
 sh_universe -Where all the universe building functions are stored.
 ----------------------------------------------------]]--
-
-if(SERVER)then
-
-else
-
-end		
+local Singularity = Singularity --Localise the global table for speed.
+Singularity.Universe = Singularity.Universe or {}
+local Universe = Singularity.Universe --SPEEEEEEEEEED WOOT!
 
 math.randomseed(SubSpaces.MapSeed)
+
+function Universe.ScaleEntity(ent,scale)
+
+	local phys = ent:GetPhysicsObject()
+	if phys and phys:IsValid() then
+		local mesh = phys:GetMesh()
+		
+		if(mesh)then
+			for k,v in pairs(mesh) do
+				v.pos = v.pos*scale
+			end
+			ent:PhysicsFromMesh(mesh)
+			ent:EnableCustomCollisions()
+		end
+	end
+	
+	if(SERVER)then
+		net.Start( "universe_setscale" )
+			net.WriteEntity(ent)
+			net.WriteFloat(scale)
+		net.Broadcast()
+	else
+		local s = Vector( scale,scale,scale )
+		local mat = Matrix()
+		mat:Scale( s )
+		ent:EnableMatrix( "RenderMultiply", mat )
+		ent.DrawEntityOutline = function() end//fixes it breaking the clientside scale
+	end
+end
+
+if(SERVER)then
+	util.AddNetworkString( "universe_setscale" )
+	
+	function Universe.GeneratePlanet(Vec,Scale,SubSpace,Data)
+		local planet = ents.Create( "sing_planet" )
+		planet:SetPos(Vec)
+		planet:SetAngles( Angle( 0, 0, 0 ) )
+		planet:SetColor(Data.Color)
+		planet:SetNWFloat("Scale", Scale)
+		planet:Spawn()
+		planet:Activate()
+		planet:SetSubSpace(SubSpace)
+		Universe.ScaleEntity(planet,Scale)
+		
+		local atmos = ents.Create( "sing_atmosphere" )
+		atmos:SetPos( Vec )
+		atmos:SetAngles( Angle( 0, 0, 0 ) )
+		atmos:SetNWFloat("Scale", Scale)
+		atmos:Spawn()
+		atmos:Activate()
+  		atmos:SetParent( planet )
+		atmos:SetColor(Data.Color)
+		atmos:SetSubSpace(SubSpace)
+		atmos:SetupAtmosphere(Scale)
+		Universe.ScaleEntity(atmos,Scale)
+	end
+	
+else
+	net.Receive( "universe_setscale", function( length, client )
+		local Ent,Scale = net.ReadEntity(),net.ReadFloat()
+		if(not Ent or not Ent:IsValid())then return end
+		Universe.ScaleEntity(Ent,Scale)
+	end)
+	
+end		
+
+
+
+
 
 function RU()
 	return math.random(-10,10)
@@ -17,17 +83,3 @@ end
 function R()
 	return math.random(-100000,100000)/10000
 end
-
-print("Planet 1")
-X,Y,Z=R(),R(),R()
-print(tostring(Vector(X,Y,Z)))
-
-X,Y,Z=RU(),RU(),RU()
-print(tostring(Vector(X,Y,Z)))
-
-print("Planet 2")
-X,Y,Z=R(),R(),R()
-print(tostring(Vector(X,Y,Z)))
-
-X,Y,Z=RU(),RU(),RU()
-print(tostring(Vector(X,Y,Z)))

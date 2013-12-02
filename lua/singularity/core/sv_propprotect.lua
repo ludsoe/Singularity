@@ -8,7 +8,6 @@ function PropProtect.PlayerCanTouch(ply, ent)
 	if(not ent:IsValid() or not ply:IsValid() or ent:IsPlayer() or !ply:IsPlayer())then return false end
 	
 	if(ent.UnTouchable)then
-		if(ply:IsAdmin())then return true end
 		return false
 	end
 	

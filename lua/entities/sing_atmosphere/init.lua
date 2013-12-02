@@ -18,8 +18,6 @@ function ENT:Initialize()
 	self:DrawShadow(false)
 	self:SetNotSolid( true )
 	
-	self:SetNWFloat("Scale", self.Scale)
-
 	local phys = self:GetPhysicsObject()
 	if (phys:IsValid()) then
 		phys:Wake()
@@ -27,16 +25,16 @@ function ENT:Initialize()
 end
 
 function ENT:SetupAtmosphere(Scale)
-	local rad = 500*Scale
+	local rad = 750*Scale
 	self:PhysicsInitSphere(rad)
 	self:SetCollisionBounds(Vector(-rad,-rad,-rad),Vector(rad,rad,rad))
 	self:SetTrigger( true )
-    self:GetPhysicsObject():EnableMotion( false )
 	self:SetMoveType( MOVETYPE_NONE )
 	
 	local phys = self:GetPhysicsObject()
 	if (phys:IsValid()) then
 		phys:Wake()
+		phys:EnableMotion( false )
 	end
 	self:SetNotSolid( true )
 end

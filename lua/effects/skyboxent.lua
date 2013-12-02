@@ -32,7 +32,7 @@ function EFFECT:Init(data)
 	
 	local Scale = 1/SubSpaces.Scale
 	if(ent.Scale)then
-		Scale = (ent.Scale*10)/SubSpaces.Scale
+		Scale = (ent.Scale*8)/SubSpaces.Scale
 	end
 	self:SetModelScale(Scale,0)
 	

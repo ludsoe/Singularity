@@ -26,34 +26,16 @@ end
 function TOOL:LeftClick(Trace)
 	local tr = self:GetOwner():GetEyeTrace()
 	
-	print("Click")
 	
 	if ( not tr.Hit or tr.HitWorld) then return false end
 		local SpawnPos = tr.HitPos + tr.HitNormal * 16
-		local ent = ents.Create( "meoo_satellite_deployer" )
-		print("Click2")
-		ent:SetPos( SpawnPos )
-		ent:SetAngles( Angle( 0, 0, 0 ) )
-		ent:SetColor(Color(self:GetClientNumber("red"),self:GetClientNumber("green"),self:GetClientNumber("blue"),255))
-		ent:Spawn()
-		ent:Activate()
-		ent.Scale = self:GetClientNumber("scale")
-		ent.Time = self:GetClientNumber("time")
+		Singularity.Universe.GeneratePlanet(SpawnPos,self:GetClientNumber("scale"),self:GetOwner():GetSubSpace(),{Color=Color(self:GetClientNumber("red"),self:GetClientNumber("green"),self:GetClientNumber("blue"),255)})
 	return true
 end
 
 // Right click
 
 function TOOL:RightClick(Trace)
-	local tr = self:GetOwner():GetEyeTrace()
-	if ( !tr.Hit or tr.HitWorld or !self:GetOwner():IsAdmin() ) then return false end
-	if ( tr.Entity:IsValid() and tr.Entity:GetClass() == "meoo_satellite_deployer" ) then
-		tr.Entity:SetColor(Color(self:GetClientNumber("red"),self:GetClientNumber("green"),self:GetClientNumber("blue"),255))
-		tr.Entity.Scale = self:GetClientNumber("scale")
-		tr.Entity.Time = self:GetClientNumber("time")
-		return true	
-	end
-	return false
 end
 
 // Control panel
