@@ -9,7 +9,7 @@ local Utl = Singularity.Utl --Makes it easier to read the code.
 
 if(SERVER)then
 	Utl:SetupThinkHook("CreateSpawnStation",0.1,1,function() 
-		Pers:LoadFromData(Vector(0,0,0),PB["spawnstation"],false) 
+		Pers:LoadFromData(Vector(0,0,0),PB["spawnstation"],false,SubSpaces.MainSpace) 
 	end)
 	
 	function Singularity.PlayerSpawn(ply)
@@ -24,7 +24,9 @@ else
 end
 
 local MainF = "singularity/main/"
+local ScorF = "singularity/scoreboard/"
 
 Singularity.LoadFile(MainF.."lde_spacecraft.lua")
 Singularity.LoadFile(MainF.."sh_universe.lua")
+Singularity.LoadFile(ScorF.."init.lua")
 

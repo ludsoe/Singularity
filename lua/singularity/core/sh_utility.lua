@@ -133,6 +133,9 @@ if(SERVER)then
 	Utl:MakeHook("PlayerInitialSpawn") 
 	Utl:MakeHook("OnEntityCreated")
 	Utl:MakeHook("PlayerSpawn")
+	Utl:MakeHook("PlayerDisconnected")
+	Utl:MakeHook("PlayerConnect")
+	Utl:MakeHook("PlayerConnect")
 	Utl:MakeHook("OnRemove")
 	Utl:MakeHook("Shutdown")
 
@@ -181,7 +184,62 @@ if(SERVER)then
 		
 	end	
 	
+	--[[----------------------------------------------------
+	Serverside Chat Functions.
+	----------------------------------------------------]]--
+	util.AddNetworkString( "sing_sendcolchat" )
+	
+	function Utl:NotifyPlayers(Source,String,Color)
+		local plys = player.GetAll()
+		for k,v in pairs(plys) do
+			v:SendColorChat(Source,Color,String)
+		end
+	end
+	
+	local meta = FindMetaTable("Player")
+
+	function meta:SendColorChat(nam,col,msg)
+		net.Start("sing_sendcolchat")
+			net.WriteString(nam)
+			net.WriteVector(Vector(col.r,col.g,col.b))
+			net.WriteString(msg)
+		net.Send(self)
+	end
+	
+	--OnJoin
+	local F = function( name, address )
+		local Text = name .. " has connected from IP: " .. address
+		Utl:NotifyPlayers("Server",Text,{r=150,g=150,b=150})
+	end
+	Utl:HookHook("PlayerConnect","UtlChatMsg",F,1)
+	
+	--OnLeave
+	local F = function( ply )
+		local Text = ply:GetName().." has disconnected from the server. (SteamID: "..ply:SteamID().." )"
+		Utl:NotifyPlayers("Server",Text,{r=150,g=150,b=150})
+	end
+	Utl:HookHook("PlayerDisconnected","UtlChatMsg",F,1)	
+	
+	--OnIntSpawn
+	local F = function( ply )
+		local Text = ply:GetName().." has spawned."
+		Utl:NotifyPlayers("Server",Text,{r=150,g=150,b=150})
+	end
+	Utl:HookHook("PlayerInitialSpawn","UtlChatMsg",F,1)
+	
 else
+	--[[----------------------------------------------------
+	ClientSide Chat Handling.
+	----------------------------------------------------]]--
+	net.Receive( "sing_sendcolchat", function( length )
+		local nam = net.ReadString()
+		local vcol = net.ReadVector()
+		local col = Color(vcol.x,vcol.y,vcol.z)
+		local msg = net.ReadString()
+		
+		chat.AddText(unpack({col, nam,Color(255,255,255),": "..msg}))
+	end)
+	
 	--[[----------------------------------------------------
 	ClientSide Effect Handling.
 	----------------------------------------------------]]--

@@ -14,12 +14,21 @@ if(SERVER)then
 		local Data = {E={}}
 		
 		Data.M=Ent:GetModel()
-		Data.T=Ent:GetClass()
+		
+		local Class = Ent:GetClass()
+		if(Class~="prop_physics")then Data.T = Class end
+		
 		Data.V=C:WorldToLocal(Ent:GetPos())
 		Data.A=C:WorldToLocalAngles(Ent:GetAngles())
-		Data.S=Ent:GetSkin()
-		Data.C=Ent:GetColor()
-		Data.P=Ent:GetParent():EntIndex()
+		
+		local Skin = Ent:GetSkin()
+		if(Skin~=1)then Data.S=Skin end
+		
+		local Col = Ent:GetColor()
+		if(Col~=Color(255,255,255,255))then Data.C=Col end
+		
+		local Par = Ent:GetParent()
+		if(Par:IsValid())then Data.P=Par:EntIndex() end
 		
 		--Get entity persistant data.
 		if(Ent.GetPersData)then
@@ -84,7 +93,7 @@ if(SERVER)then
 	end
 	
 	--Loads a contraption from entity data.
-	function Pers:LoadFromData(Vect,Data,Freeze,Owner)
+	function Pers:LoadFromData(Vect,Data,Freeze,SubSpace,Owner)
 		if(not Data)then return end
 		local W,P,M,E,L = Data.Welds,Data.Props,Data.Meta,{},{}
 		
@@ -94,12 +103,12 @@ if(SERVER)then
 			ent:SetModel(PD.M)
 			ent:SetPos(Vect+PD.V)
 			ent:SetAngles(PD.A)
-			ent:SetColor(PD.C)
-			ent:SetSkin(PD.S)
-			ent:SetSubSpace(SubSpaces.MainSpace)
+			ent:SetColor(PD.C or Color(255,255,255,255))
+			ent:SetSkin(PD.S or 1)
+			ent:SetSubSpace(SubSpace)
 			ent.UnTouchable = true
 			
-			if(PD.P~=0)then
+			if(PD.P and PD.P~=0)then
 				L[ID]=function()
 					ent:SetParent(E[PD.P])
 				end

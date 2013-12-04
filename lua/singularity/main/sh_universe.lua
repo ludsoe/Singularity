@@ -66,10 +66,12 @@ if(SERVER)then
 	function Universe.LoadPlanet() end
 	function Universe.SavePlanet() end
 	
-	function Universe.GeneratePlanet() end
+	function Universe.GeneratePlanet(Star) end
 	
 	
-	function Universe.GenerateStar() end
+	function Universe.GenerateStar() 
+		
+	end
 	
 	
 	function Universe.LoadSystem() end
@@ -86,15 +88,3 @@ else
 	end)
 	
 end		
-
-
-
-
-
-function RU()
-	return math.random(-10,10)
-end
-
-function R()
-	return math.random(-100000,100000)/10000
-end
