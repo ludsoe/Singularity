@@ -184,6 +184,15 @@ if(SERVER)then
 		
 	end	
 	
+	function Utl:LoopValidPlayers(F)
+		local players = player.GetAll()	
+		for _, ply in ipairs( players ) do
+			if ply and ply:IsConnected() then
+				F(ply)
+			end
+		end
+	end
+	
 	--[[----------------------------------------------------
 	Serverside Chat Functions.
 	----------------------------------------------------]]--

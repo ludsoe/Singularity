@@ -34,8 +34,11 @@ function EFFECT:Init(data)
 	if(ent.Scale)then
 		Scale = (ent.Scale*8)/SubSpaces.Scale
 	end
-	self:SetModelScale(Scale,0)
 	
+	local mat = Matrix()
+	mat:Scale(Vector(Scale,Scale,Scale))
+	self:EnableMatrix("RenderMultiply", mat)
+
 	local Spot = (Pos+((SubSpaces.MapSize*1.5)*SubPos))/SubSpaces.Scale
 	
 	--print(tostring(Spot))

@@ -4,6 +4,7 @@ sh_universe -Where all the universe building functions are stored.
 local Singularity = Singularity --Localise the global table for speed.
 Singularity.Universe = Singularity.Universe or {}
 local Universe = Singularity.Universe --SPEEEEEEEEEED WOOT!
+local Utl = Singularity.Utl --Makes it easier to read the code.
 
 math.randomseed(SubSpaces.MapSeed)
 
@@ -38,6 +39,11 @@ end
 
 if(SERVER)then
 	util.AddNetworkString( "universe_setscale" )
+	
+	function Universe.PreCache(ply)
+		
+	end
+	Utl:SetupThinkHook("UniversePreCache",3,0,function() Utl:LoopValidPlayers(Universe.PreCache) end)
 	
 	function Universe.BuildPlanet(Vec,Scale,SubSpace,Data)
 		local planet = ents.Create( "sing_planet" )

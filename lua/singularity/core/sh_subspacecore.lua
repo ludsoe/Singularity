@@ -232,17 +232,7 @@ if(SERVER)then
 			SubSpaces:SyncSubSpace(id,subspace)
 		end	
 	end
-	
-	function SubSpaces:CreateLayer( ply, title ) --Disabled for now.
-		--[[if ( !ply.OwnedLayer ) then
-			local Name = ply:Nick()
-			local SubSpace = { Owner = Name, Title = title , Pos = Vector(0,0,0), Entitys={} , Age=CurTime() , Importance = true}
-			SubSpaces.SubSpaces[Name]=SubSpace
-			SubSpaces:SyncLayer(Name,SubSpace)
-			ply.OwnedLayer = Name
-		end]]
-	end 
-	
+
 	function SubSpaces:WorldGenLayer(Name,Vect,Type)
 		if(not SubSpaces.SubSpaces[Name])then
 			print("Generating "..Name.." subspace")
@@ -290,14 +280,18 @@ if(SERVER)then
 			SubSpaces.SubSpaceKeys[tostring(STable.Pos)]=nil
 			
 			for ID, ent in pairs( STable.Entitys ) do
-				if(Protect)then
-					ent:SetSubSpace( SubSpaces.MainSpace )
+				if(ent.OnUnload)then
+					ent:OnUnload()
 				else
-					if(ent:IsPlayer())then
-						ent:Kill() --Kill players causing them to respawn.
+					if(Protect)then
+						ent:SetSubSpace( SubSpaces.MainSpace )
 					else
-						ent:Remove() --Remove entities.
-					end
+						if(ent:IsPlayer())then
+							ent:Kill() --Kill players causing them to respawn.
+						else
+							ent:Remove() --Remove entities.
+						end
+					end			
 				end
 			end
 			
@@ -310,18 +304,6 @@ if(SERVER)then
 			SubSpaces:DestroyLayerByKey( ply.OwnedLayer,true )
 		end
 	end
-
-	concommand.Add( "subspaces_create", function( ply )
-		if ( ply:IsValid() ) then
-			SubSpaces:CreateLayer( ply, ply:Nick() .. "'s subspace")
-		end
-	end )
-
-	concommand.Add( "subspaces_destroy", function( ply )
-		if ( ply:IsValid() ) then
-			SubSpaces:DestroyLayer( ply )
-		end
-	end )
 
 	concommand.Add( "subspaces_select", function( ply, com, args )
 		if ( ply:IsValid() and SubSpaces.SubSpaces[args[1]] ) then
@@ -428,12 +410,7 @@ else
 	--SubSpaces.SubSpaces = SubSpaces.SubSpaces or {}
 	net.Receive( "subspaces_create", function( length, client )
 		local id, title, owner, pos = net.ReadString(), net.ReadString(), net.ReadString(), net.ReadVector()
-		if ( SubSpaces.layerList ) then
-			if ( owner == LocalPlayer() ) then
-				SubSpaces.layerList.HasLayer = true
-				SubSpaces.layerList.CreateButton:SetText( "Remove your subspace" )
-			end
-			
+		if ( SubSpaces.layerList ) then		
 			if(SubSpaces.SubSpaces[id])then
 				print("SubSpace already synced.")
 			else
@@ -448,11 +425,6 @@ else
 		if ( SubSpaces.layerList ) then
 			print("Killing ALL subspaces!")
 			for _, subspace in pairs( SubSpaces.layerList.List:GetItems() ) do
-				if ( subspace.SubSpace.Owner == LocalPlayer():Nick() ) then
-					SubSpaces.layerList.HasLayer = false
-					SubSpaces.layerList.CreateButton:SetText( "Create new subspace" )
-				end
-				
 				SubSpaces.layerList.List:RemoveItem( subspace )
 			end
 			SubSpaces.SubSpaces={}
@@ -466,11 +438,6 @@ else
 
 			for _, subspace in pairs( SubSpaces.layerList.List:GetItems() ) do
 				if ( subspace.SubSpace.ID == layerId ) then
-					if ( subspace.SubSpace.Owner == LocalPlayer():Nick()  ) then
-						SubSpaces.layerList.HasLayer = false
-						SubSpaces.layerList.CreateButton:SetText( "Create new subspace" )
-					end
-					
 					SubSpaces.layerList.List:RemoveItem( subspace )
 					SubSpaces.SubSpaces[layerId]=nil
 					break
