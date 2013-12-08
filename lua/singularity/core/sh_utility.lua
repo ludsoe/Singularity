@@ -6,10 +6,11 @@ local Singularity = Singularity --Localise the global table for speed.
 Singularity.Utl = {} --Make a Utility Table.
 local Utl = Singularity.Utl --Makes it easier to read the code.
 
-Utl.ThinkLoop = {} --Create the think loop table.
-Utl.DebugTable = {} --Create the debug output storage.
-Utl.Hooks = {} --Create the hook table.
-Utl.Effect = {} --Create a table to store effect data in.
+Utl.ThinkLoop = Utl.ThinkLoop or {} --Create the think loop table.
+Utl.DebugTable = Utl.DebugTable or {} --Create the debug output storage.
+Utl.Hooks = Utl.Hooks or {} --Create the hook table.
+Utl.Effect = Utl.Effect or {} --Create a table to store effect data in.
+Utl.NetMan = Utl.NetMan or {} --Where we store the queued up data to sync.
 
 local DTable = Utl.DebugTable --Localise the debug storage.
 local HTable = Utl.Hooks --Localise the hook table for speed.
@@ -138,7 +139,19 @@ if(SERVER)then
 	Utl:MakeHook("PlayerConnect")
 	Utl:MakeHook("OnRemove")
 	Utl:MakeHook("Shutdown")
-
+	
+	function Utl:LoopValidPlayers(F,A1,A2,A3,A4,A5)
+		local players = player.GetAll()	
+		for _, ply in ipairs( players ) do
+			if ply and ply:IsConnected() then
+				local Return = F(ply,A1,A2,A3,A4,A5)
+				if(Return and Return~=nil)then
+					return Return
+				end
+			end
+		end
+	end
+	
 	--[[----------------------------------------------------
 	Settings and File Functions.
 	----------------------------------------------------]]--
@@ -161,38 +174,60 @@ if(SERVER)then
 	Utl:HookHook("Shutdown","SettingsSave",Utl.SaveSettings,1)
 	
 	--[[----------------------------------------------------
-	Serverside Effect Handling.
+	Serverside Networking Handling.
 	----------------------------------------------------]]--
-	util.AddNetworkString( "sing_sendeffectbase" )
-	util.AddNetworkString( "sing_sendeffectdata" )
-	util.AddNetworkString( "sing_requesteffectdata" )
+	util.AddNetworkString( "sing_basenetmessage" )
+	local NDat = Utl.NetMan --Ease link to the netdata table.
+	NDat.Data = NDat.Data or {} -- The actual table we store data in.
+	NDat.NetDataTypes = {S=net.WriteString,E=net.WriteEntity,F=net.WriteFloat,V=net.WriteVector,A=net.WriteAngle}
 	
-	--Sends the base data of the effect.
-	function Utl:SendEffectData(ply,Data)
-		local Name = ply:Nick()
-		if(not Utl.Effect[Name])then Utl.Effect[Name]={} end
-		
-	end
-	
-	--Sends the real effect data.
-	net.Receive( "sing_requesteffectdata", function( length, client )
-        
-	end )
-	
-	--Packages the effect up and prepares to send it.
-	function Utl:CreateEffect(Name,Data)
-		
-	end	
-	
-	function Utl:LoopValidPlayers(F)
-		local players = player.GetAll()	
-		for _, ply in ipairs( players ) do
-			if ply and ply:IsConnected() then
-				F(ply)
+	--Loops the players and prepares to send their data.
+	function NDat.CyclePlayers()
+		for nick, pdat in pairs( NDat.Data ) do
+			local Max = 10
+			for id, Data in pairs( pdat.Data ) do
+				if(Max<=0)then break end--We reached the maximum amount of data for this player.
+				Max=Max-Data.Val
+				NDat.SendData(Data,Data.Name,pdat.Ent)
+				table.remove(pdat.Data,id)
 			end
 		end
 	end
+
+	--Actually sends the data out.
+	function NDat.SendData(Data,Name,ply)
+		net.Start("sing_basenetmessage")
+			net.WriteString(Name)
+			net.WriteFloat(table.Count(Data.Dat))
+			for I, S in pairs( Data.Dat ) do --Loop all the variables.
+				net.WriteString(S.N)--Get the variable name.
+				net.WriteString(S.T)
+				NDat.NetDataTypes[S.T](S.V)
+			end
+		net.Send(ply)
+	end
 	
+	--[[
+		Data={Name="example",Val=1,Dat={{N="D",T="S",V="example"}}}
+	]]	
+	function NDat.AddData(Data,ply)
+		local T=NDat.Data[ply:Nick()]
+		table.insert(T.Data,Data)
+	end
+	
+	function NDat.AddDataAll(Data)
+		Utl:LoopValidPlayers(function(ply) NDat.AddData(Data,ply) end)
+	end
+	
+	--Creates the table we will use for each player.
+	function NDat.AddPlay(ply)
+		NDat.Data[ply:Nick()]={Data={},Ent=ply}
+	end
+	
+	Utl:SetupThinkHook("SyncNetData",0.5,0,NDat.CyclePlayers)
+	
+	Utl:HookHook("PlayerInitialSpawn","NetDatHook",NDat.AddPlay,1)
+
 	--[[----------------------------------------------------
 	Serverside Chat Functions.
 	----------------------------------------------------]]--
@@ -250,53 +285,36 @@ else
 	end)
 	
 	--[[----------------------------------------------------
-	ClientSide Effect Handling.
-	----------------------------------------------------]]--
-	Utl.NetDataTypes = {S=net.ReadString,E=net.ReadEntity,F=net.ReadFloat,V=net.ReadVector,A=net.ReadAngle}
+	ClientSide Networking Handling.
+	----------------------------------------------------]]--	
+	local NDat = Utl.NetMan --Ease link to the netdata table.
+	NDat.Data = {} 
+	NDat.NetDataTypes = {S=net.ReadString,E=net.ReadEntity,F=net.ReadFloat,V=net.ReadVector,A=net.ReadAngle}
 	
-	function Utl:RenderEffect(D)
-		--[[
-			Add Effect calling code here.
-		]]
+	function Utl:HookNet(MSG,ID,Func)
+		NDat.Data[MSG] = Func
 	end
 	
-	--Recieves the base data of the effect, and requests the rest.
-	net.Receive( "sing_sendeffectbase", function( length )
-		
-		local Name = net.ReadString() --Gets the name of the effect.
+	function NDat:InNetF(MSG,Data)
+		if(NDat.Data[MSG])then
+			NDat.Data[MSG](Data)
+		else
+			print("Unhandled message... "..MSG)
+		end
+	end
+	
+	net.Receive( "sing_basenetmessage", function( length )
+		local Name = net.ReadString() --Gets the name of the message.
 		local Count = net.ReadFloat() --Get the amount of variables were recieving.
 		
 		local D = {}
 		for I=1,Count do --Read all the variables.
-			D[I]=net.ReadString()
+			local VN = net.ReadString()
+			local Ty = net.ReadString()
+			D[VN]=NDat.NetDataTypes[Ty]()
 		end
-		Utl.Effect[Name]=D --Give the global effect table our D!
-		
-		--Request the real effect data.
-		net.Start( "sing_requesteffectdata" )
-		net.SendToServer()
-	end ) 
-	
-	--Recieves the real effect data, and sends it off to be rendered.
-	net.Receive( "sing_sendeffectdata", function( length )
-        local Name = net.ReadString()
-		
-		if(Utl.Effect[Name])then --Do we have data for it?
-			local D = Utl.Effect[Name]
-			
-			local E = {}
-			for I, S in pairs( D ) do --Loop all the variables.
-				local N = net.ReadString()--Get the variable name.
-				E[N]=Utl.NetDataTypes[S]--Get the variable data.
-			end
-			Utl:RenderEffect(E)--Send it off to be rendered.
-			
-			Utl.Effect[Name]=nil --Nil the effect, no reason to keep outdated data.
-		else
-			Utl:Debug("EffectSys","Recieving effect data from none synced "..Name,"ERROR") --Oopsie
-		end
-	end )
-	
+		NDat:InNetF(Name,D)		
+	end)
 end
 
 --[[----------------------------------------------------

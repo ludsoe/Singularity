@@ -11,6 +11,7 @@ local Utl = Singularity.Utl --Makes it easier to read the code.
 if(SERVER)then
 	
 	SubSpaces.EntCheck = CurTime()
+
 	
 	--This function will makesure a subspace exists before we try flying to it.
 	function SubSpaces:BufferTransferEvent(Vect)

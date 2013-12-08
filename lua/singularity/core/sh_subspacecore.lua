@@ -3,8 +3,10 @@ SubSpace Core -Manages the subspace systems of the mod allowing an bigger univer
 ----------------------------------------------------]]--
 
 local Utl = Singularity.Utl --Makes it easier to read the code.
+local NDat = Utl.NetMan --Ease link to the netdata table.
 
 SubSpaces = SubSpaces or {}
+local SubSpaces = SubSpaces --SPEED!!! WEEEEEE
 SubSpaces.SubSpaces = SubSpaces.SubSpaces or {}
 SubSpaces.SubSpaceKeys = SubSpaces.SubSpaceKeys or {}
 
@@ -191,12 +193,18 @@ if(SERVER)then
 	AddCSLuaFile( "vgui/layerlist.lua" )
 	AddCSLuaFile( "vgui/layerlist_layer.lua" )
 	
+	local DistCheck = function(ply,subspace)
+		local Dist = ply:GetUniPos():Distance(subspace.Pos)
+		if(Dist<50)then
+			return true
+		end
+	end
+	
 	local Func = function()
 		for id, subspace in pairs( SubSpaces.SubSpaces ) do
 			if(not subspace.Importance)then --Make sure the subspace has a timed despawn.
 				if(subspace.Age+3<CurTime())then --Give subspaces that were just created time to fill with entities.
-					local EntCount=table.Count(subspace.Entitys)
-					if(EntCount<=0)then --Make sure theres no entitys in the subspace.
+					if(not Utl:LoopValidPlayers(DistCheck,subspace))then --NearbyPlayers?
 						SubSpaces:DestroyLayerByKey( id ) --Kill it.
 					else
 						subspace.Age=CurTime()--Give the subspace a longer life if it has entitys contained in it.
@@ -205,8 +213,8 @@ if(SERVER)then
 			end
 		end
 	end
-	Utl:SetupThinkHook("SpaceCleaner",1,0,Func)
-	Utl:SetupThinkHook("SubSpaceSync",60,0,function() SubSpaces:SyncLayers() end)
+	Utl:SetupThinkHook("SpaceCleaner",10,0,Func)
+	--Utl:SetupThinkHook("SubSpaceSync",60,0,function() SubSpaces:SyncLayers() end)
 	
 	--[[------------------------------------------------------------------------------------------------------------------
 		SubSpace management
@@ -216,13 +224,15 @@ if(SERVER)then
 	util.AddNetworkString( "subspaces_clearall" )
 	
 	function SubSpaces:SyncSubSpace(Name,SubSpace)
-		print("syncing "..Name.." subspace")
-		net.Start( "subspaces_create" )
-			net.WriteString(Name)
-			net.WriteString(SubSpace.Title)
-			net.WriteString(SubSpace.Owner)
-			net.WriteVector(SubSpace.Pos)
-		net.Broadcast()
+		--print("syncing "..Name.." subspace")
+		local Data = {Name="subspace_create",Val=1,Dat={
+			{N="N",T="S",V=Name},
+			{N="T",T="S",V=SubSpace.Title},
+			{N="O",T="S",V=SubSpace.Owner},
+			{N="V",T="V",V=SubSpace.Pos}
+		}}
+		
+		NDat.AddDataAll(Data)
 	end
 	
 	function SubSpaces:SyncLayers()
@@ -271,7 +281,7 @@ if(SERVER)then
 	function SubSpaces:DestroyLayerByKey( Key,Protect )
 		local STable = SubSpaces.SubSpaces[Key]
 		if(STable)then
-			print("Deleting Subspace "..Key)
+			--print("Deleting Subspace "..Key)
 			net.Start( "subspaces_destroyed" )
 				net.WriteString(Key)
 			net.Broadcast()
@@ -408,18 +418,18 @@ if(SERVER)then
 	end
 else	
 	--SubSpaces.SubSpaces = SubSpaces.SubSpaces or {}
-	net.Receive( "subspaces_create", function( length, client )
-		local id, title, owner, pos = net.ReadString(), net.ReadString(), net.ReadString(), net.ReadVector()
+	Singularity.Utl:HookNet("subspace_create","",function(D)
+		local id, title, owner, pos = D.N, D.T, D.O, D.V
 		if ( SubSpaces.layerList ) then		
 			if(SubSpaces.SubSpaces[id])then
-				print("SubSpace already synced.")
+			--	print("SubSpace already synced.")
 			else
 				SubSpaces.layerList:AddLayer( id, title, owner, pos )
 			end
 		end
 		SubSpaces.SubSpaces[id]={Owner=owner,Title=Title,Pos=pos}
-		print(id.." is synced now clientside.")
-	end )
+		--print(id.." is synced now clientside.")		
+	end)
 	
 	net.Receive( "subspaces_clearall", function( length, client )
 		if ( SubSpaces.layerList ) then

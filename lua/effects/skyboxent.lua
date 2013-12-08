@@ -30,10 +30,8 @@ function EFFECT:Init(data)
 	self:SetSkin(ent:GetSkin())
 	self:SetColor(ent:GetColor())
 	
-	local Scale = 1/SubSpaces.Scale
-	if(ent.Scale)then
-		Scale = (ent.Scale*8)/SubSpaces.Scale
-	end
+	local Scale = (ent.SkyScale or 1)*(1/SubSpaces.Scale)
+	
 	
 	local mat = Matrix()
 	mat:Scale(Vector(Scale,Scale,Scale))
