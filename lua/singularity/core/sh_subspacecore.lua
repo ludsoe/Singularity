@@ -2,22 +2,40 @@
 SubSpace Core -Manages the subspace systems of the mod allowing an bigger universe.
 ----------------------------------------------------]]--
 
+SubSpaces = SubSpaces or {}
 local Utl = Singularity.Utl --Makes it easier to read the code.
 local NDat = Utl.NetMan --Ease link to the netdata table.
-
-SubSpaces = SubSpaces or {}
 local SubSpaces = SubSpaces --SPEED!!! WEEEEEE
+local math = math
+
 SubSpaces.SubSpaces = SubSpaces.SubSpaces or {}
 SubSpaces.SubSpaceKeys = SubSpaces.SubSpaceKeys or {}
 
 SubSpaces.Center = Vector(0,0,0)
 SubSpaces.SkyBox = Vector(0,0,-14144)
-SubSpaces.MapSize = 16000
-SubSpaces.SkySize = SubSpaces.MapSize/128
-SubSpaces.Scale = 128
-SubSpaces.MapSeed = 30303060
+SubSpaces.MapSize = SubSpaces.MapSize or 16000
+SubSpaces.SkySize = SubSpaces.SkySize or SubSpaces.MapSize/128
+SubSpaces.Scale = SubSpaces.Scale or 128
 SubSpaces.MainSpace = "MainSpace"
 SubSpaces.NullSpace = "NullSpace"
+
+--[[------------------------------------------------------------------------------------------------------------------
+	SubSpace Functions
+------------------------------------------------------------------------------------------------------------------]]--
+
+local MS,MF = function() return SubSpaces.MapSize end,function(N)
+	if N<0 then return math.ceil(N) end
+	return math.floor(N) 
+end
+function SubSpaces.ConvVector(V)
+	print("V:"..tostring(V))
+	local X,Y,Z = V.x/MS(),V.y/MS(),V.z/MS()
+	print(X.." "..Y.." "..Z)
+	local SubS = Vector(MF(X),MF(Y),MF(Z))
+	print(tostring(SubS).." MS: "..MS())
+	local Sub=SubSpaces:SubSpaceFromVector(SubS)
+	return V-(SubS*MS()),Sub
+end
 
 --[[------------------------------------------------------------------------------------------------------------------
 	Basic set and get subspace functions
@@ -51,12 +69,30 @@ function ENT:GetUniPos()
 	return self:GetNWVector( "UniPos", Vector(0,0,0) )
 end
 
-function ENT:GetViewSubSpace()
-	if(SERVER)then
-		return self:GetNWString( "ViewSubSpace",SubSpaces.MainSpace)
-	else
-		return self:GetNWString("ViewSubSpace",SubSpaces.MainSpace)
+--Lets hack :GetPos()
+if SERVER then
+	if not ENT.OriginalGetPos then
+		ENT.OriginalGetPos = ENT.GetPos
+
+		function ENT:GetPos()
+			return (self:GetUniPos()*SubSpaces.MapSize)+self:OriginalGetPos()
+		end
 	end
+
+	if not ENT.OriginalSetPos then
+		ENT.OriginalSetPos = ENT.SetPos
+	end	
+	function ENT:SetPos(Pos)
+		local P,S = SubSpaces.ConvVector(Pos)
+
+		self:OriginalSetPos(P)
+		self:SetSubSpace( S )
+		self:SetViewSubSpace( S )
+	end	
+end
+	
+function ENT:GetViewSubSpace()
+	return self:GetNWString("ViewSubSpace",SubSpaces.MainSpace)
 end
 
 --[[------------------------------------------------------------------------------------------------------------------
@@ -84,47 +120,49 @@ hook.Add( "ShouldCollide", "LayerCollide", ShouldEntitiesCollide )
 
 if(not SubSpaces.OriginalTraceLine)then
 	SubSpaces.OriginalTraceLine = util.TraceLine
-end
-function util.TraceLine( td, subspace )
-	if ( !subspace ) then 
-		if(SERVER)then
-			subspace = "Global"
-		else
-			subspace = LocalPlayer():GetSubSpace()
-		end
-	end
-	local originalResult = SubSpaces.OriginalTraceLine( td )
-	if ( !originalResult.Entity:IsValid() or originalResult.Entity:GetSubSpace() == subspace or subspace=="Global") then
-		return originalResult
-	else
-		if ( td.filter ) then
-			if ( type( td.filter ) == "table" ) then
-				table.insert( td.filter, originalResult.Entity )
+
+	function util.TraceLine( td, subspace )
+		if ( !subspace ) then 
+			if(SERVER)then
+				subspace = "Global"
 			else
-				td.filter = { td.filter, originalResult.Entity }
+				subspace = LocalPlayer():GetSubSpace()
 			end
-		else
-			td.filter = originalResult.Entity
 		end
-		
-		return util.TraceLine( td )
+		local originalResult = SubSpaces.OriginalTraceLine( td )
+		if ( !originalResult.Entity:IsValid() or originalResult.Entity:GetSubSpace() == subspace or subspace=="Global") then
+			return originalResult
+		else
+			if ( td.filter ) then
+				if ( type( td.filter ) == "table" ) then
+					table.insert( td.filter, originalResult.Entity )
+				else
+					td.filter = { td.filter, originalResult.Entity }
+				end
+			else
+				td.filter = originalResult.Entity
+			end
+			
+			return util.TraceLine( td )
+		end
 	end
 end
 
 if(not SubSpaces.OriginalPlayerTrace)then
 	SubSpaces.OriginalPlayerTrace = util.GetPlayerTrace
-end
-function util.GetPlayerTrace( ply, dir )
-	local originalResult = SubSpaces.OriginalPlayerTrace( ply, dir )
-	originalResult.filter = { ply }
-	
-	for _, ent in ipairs( ents.GetAll() ) do
-		if ( ent:GetSubSpace() != ply:GetSubSpace() ) then
-			table.insert( originalResult.filter, ent )
+
+	function util.GetPlayerTrace( ply, dir )
+		local originalResult = SubSpaces.OriginalPlayerTrace( ply, dir )
+		originalResult.filter = { ply }
+		
+		for _, ent in ipairs( ents.GetAll() ) do
+			if ( ent:GetSubSpace() != ply:GetSubSpace() ) then
+				table.insert( originalResult.filter, ent )
+			end
 		end
+		
+		return originalResult
 	end
-	
-	return originalResult
 end
  
  --Function to grab the maps size using raytracing and guessing.
@@ -182,7 +220,7 @@ function SubSpaces.GetMapSize()
 	print("Scale "..SubSpaces.Scale)
 end
 
-Utl:SetupThinkHook("GetMapSize",10,1,function() SubSpaces.GetMapSize() end)--Because running it first things first caused crashs.
+Utl:SetupThinkHook("GetMapSize",0,1,function() SubSpaces.GetMapSize() end)--Because running it first things first caused crashs.
 
 if(SERVER)then
 	
@@ -251,9 +289,7 @@ if(SERVER)then
 			SubSpace = {ID=Name, Owner = "World", Title = Name , Pos = Vect, Entitys={}, Age=CurTime() , Importance = Type}
 			SubSpaces.SubSpaces[Name]=SubSpace
 			
-			if(Vect~=Vector(0,0,0) or Name == SubSpaces.MainSpace)then
-				SubSpaces.SubSpaceKeys[tostring(Vect)]=SubSpaces.SubSpaces[Name] --Vector to subspace key link.
-			end
+			SubSpaces.SubSpaceKeys[tostring(Vect)]=SubSpaces.SubSpaces[Name] --Vector to subspace key link.
 			
 			SubSpaces:SyncSubSpace(Name,SubSpace)
 		else
@@ -276,7 +312,6 @@ if(SERVER)then
 	end
 
 	SubSpaces:WorldGenLayer(SubSpaces.MainSpace,Vector(0,0,0),true)
-	SubSpaces:WorldGenLayer(SubSpaces.NullSpace,Vector(0,0,0),true)
 	
 	function SubSpaces:DestroyLayerByKey( Key,Protect )
 		local STable = SubSpaces.SubSpaces[Key]
@@ -290,16 +325,18 @@ if(SERVER)then
 			SubSpaces.SubSpaceKeys[tostring(STable.Pos)]=nil
 			
 			for ID, ent in pairs( STable.Entitys ) do
-				if(ent.OnUnload)then
+				if IsValid(ent) and ent.OnUnload then
 					ent:OnUnload()
 				else
 					if(Protect)then
 						ent:SetSubSpace( SubSpaces.MainSpace )
 					else
-						if(ent:IsPlayer())then
-							ent:Kill() --Kill players causing them to respawn.
-						else
-							ent:Remove() --Remove entities.
+						if IsValid(ent) then
+							if ent:IsPlayer() then
+								ent:Kill() --Kill players causing them to respawn.
+							else
+								ent:Remove() --Remove entities.
+							end
 						end
 					end			
 				end
@@ -329,32 +366,33 @@ if(SERVER)then
 		Constraint handling
 	------------------------------------------------------------------------------------------------------------------]]--
 
-	if(not SubSpaces.OldKeyframeRope)then
+	if not SubSpaces.OldKeyframeRope then
 		SubSpaces.OldKeyframeRope = constraint.CreateKeyframeRope
-	end
-	function constraint.CreateKeyframeRope( pos, width, material, constr, ent1, lpos1, bone1, ent2, lpos2, bone2, kv )
-		local rope = SubSpaces.OldKeyframeRope( pos, width, material, constr, ent1, lpos1, bone1, ent2, lpos2, bone2, kv )
-		
-		if ( rope ) then
-			if ( ent1:IsWorld() and !ent2:IsWorld() ) then
-				rope:SetNWEntity( "CEnt", ent2 )
-			elseif ( !ent1:IsWorld() and ent2:IsWorld() ) then
-				rope:SetNWEntity( "CEnt", ent1 )
-			else
-				// For a pulley, the two specified entities are both the world for the middle rope, so we just remember the entity from the first rope
-				rope:SetNWEntity( "CEnt", SubSpaces.KeyframeEntityCache )
+	
+		function constraint.CreateKeyframeRope( pos, width, material, constr, ent1, lpos1, bone1, ent2, lpos2, bone2, kv )
+			local rope = SubSpaces.OldKeyframeRope( pos, width, material, constr, ent1, lpos1, bone1, ent2, lpos2, bone2, kv )
+			
+			if ( rope ) then
+				if ( ent1:IsWorld() and !ent2:IsWorld() ) then
+					rope:SetNWEntity( "CEnt", ent2 )
+				elseif ( !ent1:IsWorld() and ent2:IsWorld() ) then
+					rope:SetNWEntity( "CEnt", ent1 )
+				else
+					// For a pulley, the two specified entities are both the world for the middle rope, so we just remember the entity from the first rope
+					rope:SetNWEntity( "CEnt", SubSpaces.KeyframeEntityCache )
+				end
 			end
-		end
-		
-		SubSpaces.KeyframeEntityCache = ent1
-		
-		return rope
-	end		
+			
+			SubSpaces.KeyframeEntityCache = ent1
+			
+			return rope
+		end		
+	end
 	
 	--[[------------------------------------------------------------------------------------------------------------------
 		Camera handling
 	------------------------------------------------------------------------------------------------------------------]]--
-	if(not SubSpaces.OldSetViewEntity)then
+	if not SubSpaces.OldSetViewEntity then
 		SubSpaces.OldSetViewEntity = PLY.SetViewEntity
 		function PLY:SetViewEntity( ent )
 			self:SetViewSubSpace( ent:GetSubSpace() )
@@ -401,20 +439,22 @@ if(SERVER)then
 	Utl:HookHook("OnEntityCreated","SubSpace",SubSpaces.OnEntityCreated,1)
 	Utl:HookHook("OnRemove","SubSpace",SubSpaces.OnEntityRemove,1)	
 	
-	if(not SubSpaces.OriginalAddCount)then
+	if not SubSpaces.OriginalAddCount then
 		SubSpaces.OriginalAddCount = PLY.AddCount
-	end
-	function PLY:AddCount( type, ent )
-		ent:SetSubSpace( self:GetSubSpace() )
-		return SubSpaces.OriginalAddCount( self, type, ent )
+		
+		function PLY:AddCount( type, ent )
+			ent:SetSubSpace( self:GetSubSpace() )
+			return SubSpaces.OriginalAddCount( self, type, ent )
+		end
 	end
 	
-	if(not SubSpaces.OriginalCleanup)then
+	if not SubSpaces.OriginalCleanup then
 		SubSpaces.OriginalCleanup = cleanup.Add
-	end
-	function cleanup.Add( ply, type, ent )
-		if ( ent ) then ent:SetSubSpace( ply:GetSubSpace() ) end
-		return SubSpaces.OriginalCleanup( ply, type, ent )
+	
+		function cleanup.Add( ply, type, ent )
+			if ( ent ) then ent:SetSubSpace( ply:GetSubSpace() ) end
+			return SubSpaces.OriginalCleanup( ply, type, ent )
+		end
 	end
 else	
 	--SubSpaces.SubSpaces = SubSpaces.SubSpaces or {}
@@ -499,12 +539,13 @@ else
 	end
 	hook.Add( "RenderScene", "SingularityEntityDrawing", SubSpaces.RenderEntities )
 	
-	if(not SubSpaces.oldEmitSound)then
+	if not SubSpaces.oldEmitSound then
 		SubSpaces.oldEmitSound = ENT.EmitSound
-	end
-	function ENT:EmitSound( filename, soundlevel, pitchpercent )
-		if LocalPlayer():GetSubSpace() != self:GetSubSpace() then return end
 		
-		SubSpaces.oldEmitSound( self, filename, soundlevel, pitchpercent )
+		function ENT:EmitSound( filename, soundlevel, pitchpercent )
+			if LocalPlayer():GetSubSpace() ~= self:GetSubSpace() then return end
+			
+			SubSpaces.oldEmitSound( self, filename, soundlevel, pitchpercent )
+		end
 	end
 end

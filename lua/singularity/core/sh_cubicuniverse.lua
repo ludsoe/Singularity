@@ -16,7 +16,7 @@ if(SERVER)then
 	--This function will makesure a subspace exists before we try flying to it.
 	function SubSpaces:BufferTransferEvent(Vect)
 		local Key = tostring(Vect)
-		if(not SubKeys[Key])then
+		if not SubKeys[Key] then
 			SubSpaces:WorldGenLayer(Key,Vect,false)--The System doesnt exist, lets create it.
 		end
 	end
@@ -30,7 +30,7 @@ if(SERVER)then
 	function SubSpaces:TransferSubSpaceEvent(Ent,SubSpace,Direction,Inverted)
 		local JumpEnts = constraint.GetAllConstrainedEntities_B( Ent )
 
-		local WarpDrivePos = Ent:GetPos()
+		local WarpDrivePos = Ent:OriginalGetPos()
 		local DoneList = {Ent}
 		ConstrainedEnts = ents.FindInSphere( WarpDrivePos , 600)
 		for _, v in pairs(ConstrainedEnts) do
@@ -46,13 +46,13 @@ if(SERVER)then
 		table.Add(JumpEnts,DoneList)
 		local Lvecs = {Pos={},Vel={}}
 		for i, ent in pairs( JumpEnts ) do
-			Lvecs.Pos[i] = Ent:WorldToLocal( ent:GetPos() )
-			Lvecs.Vel[i] = Ent:WorldToLocal( ent:GetVelocity() + ent:GetPos() )
+			Lvecs.Pos[i] = Ent:WorldToLocal( ent:OriginalGetPos() )
+			Lvecs.Vel[i] = Ent:WorldToLocal( ent:GetVelocity() + ent:OriginalGetPos() )
 			ent:SetVelocity( ent:GetVelocity() * -1 )
 		end
 		local Velocity=Ent:GetVelocity()
 		
-		Ent:SetPos(Ent:GetPos()*Inverted)
+		Ent:OriginalSetPos(Ent:OriginalGetPos()*Inverted)
 		Ent:SetVelocity(Velocity) --Carry the velocity over.
 		
 		Ent:SetSubSpace(SubSpace)
@@ -60,11 +60,11 @@ if(SERVER)then
 		for i, ent in pairs( JumpEnts ) do
 			ent:SetSubSpace(SubSpace)
 			if(not ent:GetParent():IsValid())then
-				ent:SetPos(Ent:LocalToWorld(Lvecs.Pos[i]))
+				ent:OriginalSetPos(Ent:LocalToWorld(Lvecs.Pos[i]))
 				-- Set new velocity
 				local phys = ent:GetPhysicsObject()
 				if phys:IsValid() then
-					phys:SetVelocity( Ent:LocalToWorld( Lvecs.Vel[i] ) - ent:GetPos() )
+					phys:SetVelocity( Ent:LocalToWorld( Lvecs.Vel[i] ) - ent:OriginalGetPos() )
 					phys:Wake()
 				else
 					ent:SetVelocity( Ent:LocalToWorld( Lvecs.Vel[i] ) )
@@ -141,7 +141,7 @@ if(SERVER)then
 						end
 					end
 					
-					local Dir = ent:GetPos()+(ent:GetVelocity()*2)
+					local Dir = ent:OriginalGetPos()+(ent:GetVelocity()*2)
 					local Size = SubSpaces.MapSize
 					if(mbs(Dir.X)>Size or mbs(Dir.Y)>Size or mbs(Dir.Z)>Size)then
 						SubSpaces:BeginTransferEvent(ent,Dir)--Time to teleport! Hold on tight.

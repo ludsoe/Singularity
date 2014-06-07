@@ -27,6 +27,5 @@ local MainF = "singularity/main/"
 local ScorF = "singularity/scoreboard/"
 
 Singularity.LoadFile(MainF.."lde_spacecraft.lua")
-Singularity.LoadFile(MainF.."sh_universe.lua")
 Singularity.LoadFile(ScorF.."init.lua")
 
