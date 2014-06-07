@@ -80,6 +80,8 @@ function Singularity.SpaceCraft.MakeSpaceC(Data)
 			Body = ents.Create( "prop_vehicle_prisoner_pod" )
 			Body:SetModel( self.Data.model ) 
 			Body:SetPos( self:GetPos() )
+			Body:SetSubSpace( self:GetSubSpace())
+			print(self:GetSubSpace())
 			Body:SetAngles(self:GetAngles())
 			Body:Spawn()
 			Body:Activate()
@@ -89,10 +91,11 @@ function Singularity.SpaceCraft.MakeSpaceC(Data)
 				TB.HandleAnimation = function (vec, ply)
 				return ply:SelectWeightedSequence( ACT_HL2MP_SIT ) 
 			end 
-			Body:SetLocalPos(Vector(-0,0,0))
+			Body:SetLocalPos(Vector(0,0,0))
 			Body:SetLocalAngles(Angle(0,0,0))
 			Body.Singularity = {Core=self}
 			Body.IsSpaceCraft = true
+			
 			self.Body = Body
 			self:SetParent(Body)
 			local Weld = constraint.Weld(self,Body)
@@ -105,7 +108,7 @@ function Singularity.SpaceCraft.MakeSpaceC(Data)
 				phys:EnableCollisions(true)
 				phys:SetMass( 1000 )
 			end
-
+			
 			self:SetNWEntity("Pod",self.Body)			
 			
 			self.Data.Setup(self,Body)

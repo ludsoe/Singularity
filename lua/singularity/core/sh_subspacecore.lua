@@ -6,7 +6,7 @@ SubSpaces = SubSpaces or {}
 local Utl = Singularity.Utl --Makes it easier to read the code.
 local NDat = Utl.NetMan --Ease link to the netdata table.
 local SubSpaces = SubSpaces --SPEED!!! WEEEEEE
-local math = math
+local math,ENT,PLY = math,FindMetaTable( "Entity" ),FindMetaTable( "Player" )
 
 SubSpaces.SubSpaces = SubSpaces.SubSpaces or {}
 SubSpaces.SubSpaceKeys = SubSpaces.SubSpaceKeys or {}
@@ -22,17 +22,18 @@ SubSpaces.NullSpace = "NullSpace"
 --[[------------------------------------------------------------------------------------------------------------------
 	SubSpace Functions
 ------------------------------------------------------------------------------------------------------------------]]--
+if E2Lib then
+	E2Lib.clampPos = function(p) return p end
+end
 
 local MS,MF = function() return SubSpaces.MapSize end,function(N)
 	if N<0 then return math.ceil(N) end
 	return math.floor(N) 
 end
 function SubSpaces.ConvVector(V)
-	print("V:"..tostring(V))
-	local X,Y,Z = V.x/MS(),V.y/MS(),V.z/MS()
-	print(X.." "..Y.." "..Z)
-	local SubS = Vector(MF(X),MF(Y),MF(Z))
-	print(tostring(SubS).." MS: "..MS())
+	local X,Y,Z = MF(V.x/MS()),MF(V.y/MS()),MF(V.z/MS())
+	if X == -0 then X=0 end if Y == -0 then Y=0 end if Z == -0 then Z=0 end
+	local SubS = Vector(X,Y,Z)
 	local Sub=SubSpaces:SubSpaceFromVector(SubS)
 	return V-(SubS*MS()),Sub
 end
@@ -40,8 +41,7 @@ end
 --[[------------------------------------------------------------------------------------------------------------------
 	Basic set and get subspace functions
 ------------------------------------------------------------------------------------------------------------------]]--
-local ENT = FindMetaTable( "Entity" )
-local PLY = FindMetaTable( "Player" )
+
 
 function ENT:SetSubSpace( subspace )
 	local OldSub = self:GetSubSpace()
@@ -68,6 +68,10 @@ end
 function ENT:GetUniPos()
 	return self:GetNWVector( "UniPos", Vector(0,0,0) )
 end
+	
+function ENT:GetViewSubSpace()
+	return self:GetNWString("ViewSubSpace",SubSpaces.MainSpace)
+end
 
 --Lets hack :GetPos()
 if SERVER then
@@ -85,14 +89,10 @@ if SERVER then
 	function ENT:SetPos(Pos)
 		local P,S = SubSpaces.ConvVector(Pos)
 
-		self:OriginalSetPos(P)
 		self:SetSubSpace( S )
 		self:SetViewSubSpace( S )
+		return self:OriginalSetPos(P)
 	end	
-end
-	
-function ENT:GetViewSubSpace()
-	return self:GetNWString("ViewSubSpace",SubSpaces.MainSpace)
 end
 
 --[[------------------------------------------------------------------------------------------------------------------
