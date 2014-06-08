@@ -18,6 +18,13 @@ SubSpaces.SkySize = SubSpaces.SkySize or SubSpaces.MapSize/128
 SubSpaces.Scale = SubSpaces.Scale or 128
 SubSpaces.MainSpace = "MainSpace"
 
+function SubSpaces.SubSpacePos(subspace)
+	if SubSpaces.SubSpaces[subspace] then
+		return SubSpaces.SubSpaces[subspace].Pos or Vector(0,0,0)
+	end
+	return Vector(0,0,0)
+end
+
 --[[------------------------------------------------------------------------------------------------------------------
 	Basic set and get subspace functions
 ------------------------------------------------------------------------------------------------------------------]]--
@@ -75,52 +82,47 @@ hook.Add( "ShouldCollide", "LayerCollide", ShouldEntitiesCollide )
 	Trace modification
 ------------------------------------------------------------------------------------------------------------------]]--
 
-if(not SubSpaces.OriginalTraceLine)then
-	SubSpaces.OriginalTraceLine = util.TraceLine
-
-	function util.TraceLine( td, subspace )
-		if ( !subspace ) then 
-			if(SERVER)then
-				subspace = "Global"
-			else
-				subspace = LocalPlayer():GetSubSpace()
-			end
-		end
-		local originalResult = SubSpaces.OriginalTraceLine( td )
-		if ( !originalResult.Entity:IsValid() or originalResult.Entity:GetSubSpace() == subspace or subspace=="Global") then
-			return originalResult
+if(not SubSpaces.OriginalTraceLine)then SubSpaces.OriginalTraceLine = util.TraceLine end
+function util.TraceLine( td, subspace )
+	if ( !subspace ) then 
+		if(SERVER)then
+			subspace = "Global"
 		else
-			if ( td.filter ) then
-				if ( type( td.filter ) == "table" ) then
-					table.insert( td.filter, originalResult.Entity )
-				else
-					td.filter = { td.filter, originalResult.Entity }
-				end
-			else
-				td.filter = originalResult.Entity
-			end
-			
-			return util.TraceLine( td )
+			subspace = LocalPlayer():GetSubSpace()
 		end
 	end
-end
-
-if(not SubSpaces.OriginalPlayerTrace)then
-	SubSpaces.OriginalPlayerTrace = util.GetPlayerTrace
-
-	function util.GetPlayerTrace( ply, dir )
-		local originalResult = SubSpaces.OriginalPlayerTrace( ply, dir )
-		originalResult.filter = { ply }
-		
-		for _, ent in ipairs( ents.GetAll() ) do
-			if ( ent:GetSubSpace() != ply:GetSubSpace() ) then
-				table.insert( originalResult.filter, ent )
-			end
-		end
-		
+	local originalResult = SubSpaces.OriginalTraceLine( td )
+	if ( !originalResult.Entity:IsValid() or originalResult.Entity:GetSubSpace() == subspace or subspace=="Global") then
 		return originalResult
+	else
+		if ( td.filter ) then
+			if ( type( td.filter ) == "table" ) then
+				table.insert( td.filter, originalResult.Entity )
+			else
+				td.filter = { td.filter, originalResult.Entity }
+			end
+		else
+			td.filter = originalResult.Entity
+		end
+		
+		return util.TraceLine( td )
 	end
 end
+
+if not SubSpaces.OriginalPlayerTrace then SubSpaces.OriginalPlayerTrace = util.GetPlayerTrace end
+function util.GetPlayerTrace( ply, dir )
+	local originalResult = SubSpaces.OriginalPlayerTrace( ply, dir )
+	originalResult.filter = { ply }
+	
+	for _, ent in ipairs( ents.GetAll() ) do
+		if ( ent:GetSubSpace() != ply:GetSubSpace() ) then
+			table.insert( originalResult.filter, ent )
+		end
+	end
+	
+	return originalResult
+end
+
  
  --Function to grab the maps size using raytracing and guessing.
 function SubSpaces.GetAreaSize(Vec)
@@ -267,10 +269,12 @@ if(SERVER)then
 			return ID --Return our new subspace
 		end
 	end
-
+	
+	function SubSpaces:MoveSubSpaceV(Name,Vect,Vel)
+		
+	end
+		
 	SubSpaces:WorldGenLayer(SubSpaces.MainSpace,Vector(0,0,0),true)
-	SubSpaces:GetEmptySubSpace()
-	SubSpaces:GetEmptySubSpace()
 	
 	function SubSpaces:DestroyLayerByKey( Key,Protect )
 		local STable = SubSpaces.SubSpaces[Key]
@@ -458,7 +462,9 @@ else
 	--[[------------------------------------------------------------------------------------------------------------------
 		Rendering
 	------------------------------------------------------------------------------------------------------------------]]--
-
+	local NoDraw,Logged = {},{}
+	NoDraw["class C_PlayerResource"]=true
+	NoDraw["class C_GMODGameRulesProxy"]=true
 	function SubSpaces:SetEntityVisiblity( ent, subspace )
 		if ( ent:EntIndex() < 0 or not ent:IsValid() ) then return end
 		
@@ -472,17 +478,26 @@ else
 			visible = (ent:GetSubSpace() == subspace)
 		end
 		
-		if ( ent:GetClass() == "class C_RopeKeyframe" ) then
+		local class = ent:GetClass()
+		if ( class == "class C_RopeKeyframe" ) then
 			if ( visible ) then
 				ent:SetColor( 255, 255, 255, 255 )
 			else
 				ent:SetColor( 255, 255, 255, 0 )
 			end
 		else
-			if(not visible)then
-				local effectdata = EffectData()
-				effectdata:SetEntity( ent )
-				util.Effect( "skyboxent", effectdata )
+			if NoDraw[class] then
+				Visible=true
+			else
+				if not Logged[class] then
+					Logged[class]=class
+					print(class)
+				end
+				if(not visible)then
+					local effectdata = EffectData()
+					effectdata:SetEntity( ent )
+					util.Effect( "skyboxent", effectdata )
+				end
 			end
 			ent:SetNoDraw( not visible ) --Make it invisible.
 		end
