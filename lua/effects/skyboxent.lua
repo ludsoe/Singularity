@@ -27,7 +27,7 @@ function EFFECT:Init(data)
 	if(SubPos.X>13 or SubPos.Y>13 or SubPos.Z>13)then return end --Dont render it if its too far to view.
 	
 	self:SetModel(Mod)
-	self:SetAngles(ent:GetAngles()+(SubAng-PlyAng))
+	self:SetAngles(ent:WorldToLocalAngles(SubAng-PlyAng))
 	self:SetSkin(ent:GetSkin())
 	self:SetColor(ent:GetColor())
 	
