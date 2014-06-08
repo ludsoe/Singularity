@@ -228,6 +228,7 @@ if(SERVER)then
 		SubSpace management
 	------------------------------------------------------------------------------------------------------------------]]--
 	util.AddNetworkString( "subspaces_create" )
+	util.AddNetworkString( "subspaces_update" )
 	util.AddNetworkString( "subspaces_destroyed" )
 	util.AddNetworkString( "subspaces_clearall" )
 	
@@ -243,6 +244,17 @@ if(SERVER)then
 		
 		NDat.AddDataAll(Data)
 	end
+	
+	function SubSpaces:UpdateSubSpace(SubSpace)
+		--print("syncing "..Name.." subspace")
+		local Data = {Name="subspaces_update",Val=1,Dat={
+			{N="T",T="S",V=SubSpace.Title},
+			{N="V",T="V",V=SubSpace.Pos},
+			{N="A",T="A",V=SubSpace.Ang}
+		}}
+		
+		NDat.AddDataAll(Data)
+	end	
 	
 	function SubSpaces:SyncLayers()
 		net.Start( "subspaces_clearall" )
@@ -280,8 +292,12 @@ if(SERVER)then
 		end
 	end
 	
-	function SubSpaces:MoveSubSpaceV(Name,Vect,Vel)
+	function SubSpaces:MoveSubSpace(Name,Vect,Ang)
+		local SubSpace = SubSpaces.SubSpaces[Name]
+		SubSpace.Pos=Vect or SubSpace.Pos
+		SubSpace.Ang=Ang or SubSpace.Ang
 		
+		SubSpaces:UpdateSubSpace(SubSpace)
 	end
 		
 	SubSpaces:WorldGenLayer(SubSpaces.MainSpace,Vector(0,0,0),Angle(0,0,0),true)
@@ -441,6 +457,13 @@ else
 			end
 		end
 		SubSpaces.SubSpaces[id]={Owner=owner,Title=Title,Pos=pos,Ang=ang}
+		--print(id.." is synced now clientside.")		
+	end)
+	
+	Singularity.Utl:HookNet("subspaces_update","",function(D)
+		local id, pos, ang = D.T, D.V, D.A
+		local SS = SubSpaces.SubSpaces[id]
+		SS.Pos=pos SS.Ang=ang	
 		--print(id.." is synced now clientside.")		
 	end)
 	
