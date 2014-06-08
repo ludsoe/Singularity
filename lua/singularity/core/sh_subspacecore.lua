@@ -32,6 +32,12 @@ function SubSpaces.SubSpaceAng(subspace)
 	return Angle(0,0,0)
 end
 
+function SubSpaces.GetSubSpaceTable(subspace)
+	if SubSpaces.SubSpaces[subspace] then
+		return SubSpaces.SubSpaces[subspace]
+	end	
+end
+
 --[[------------------------------------------------------------------------------------------------------------------
 	Basic set and get subspace functions
 ------------------------------------------------------------------------------------------------------------------]]--
@@ -52,12 +58,6 @@ end
 
 function ENT:SetViewSubSpace( subspace )
 	self:SetNWString( "ViewSubSpace", subspace )
-end
-
-function ENT:GetSubSpaceTable(subspace)
-	if SubSpaces.SubSpaces[subspace] then
-		return SubSpaces.SubSpaces[subspace]
-	end	
 end
 
 function ENT:GetSubSpace()
