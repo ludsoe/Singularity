@@ -54,6 +54,12 @@ function ENT:SetViewSubSpace( subspace )
 	self:SetNWString( "ViewSubSpace", subspace )
 end
 
+function ENT:GetSubSpaceTable(subspace)
+	if SubSpaces.SubSpaces[subspace] then
+		return SubSpaces.SubSpaces[subspace]
+	end	
+end
+
 function ENT:GetSubSpace()
 	return self:GetNWString( "SubSpace", "" )
 end
