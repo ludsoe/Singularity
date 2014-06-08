@@ -22,7 +22,7 @@ function EFFECT:Init(data)
 	if(not self:IsGood(Type))then return end
 	
 	local SubPos = ent:GetUniPos()-LocalPlayer():GetUniPos()
-	local SubAng = ent:GetUniAng()+LocalPlayer():GetUniAng()
+	local SubAng = ent:GetUniAng()-LocalPlayer():GetUniAng()
 	
 	if(SubPos.X>13 or SubPos.Y>13 or SubPos.Z>13)then return end --Dont render it if its too far to view.
 	
