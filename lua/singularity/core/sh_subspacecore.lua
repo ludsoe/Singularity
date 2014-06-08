@@ -25,6 +25,13 @@ function SubSpaces.SubSpacePos(subspace)
 	return Vector(0,0,0)
 end
 
+function SubSpaces.SubSpaceAng(subspace)
+	if SubSpaces.SubSpaces[subspace] then
+		return SubSpaces.SubSpaces[subspace].Ang or Angle(0,0,0)
+	end
+	return Angle(0,0,0)
+end
+
 --[[------------------------------------------------------------------------------------------------------------------
 	Basic set and get subspace functions
 ------------------------------------------------------------------------------------------------------------------]]--
@@ -54,7 +61,11 @@ end
 function ENT:GetUniPos()
 	return SubSpaces.SubSpacePos(self:GetSubSpace())
 end
-	
+
+function ENT:GetUniAng()
+	return SubSpaces.SubSpaceAng(self:GetSubSpace())
+end
+		
 function ENT:GetViewSubSpace()
 	return self:GetNWString("ViewSubSpace",SubSpaces.MainSpace)
 end
@@ -226,7 +237,8 @@ if(SERVER)then
 			{N="N",T="S",V=Name},
 			{N="T",T="S",V=SubSpace.Title},
 			{N="O",T="S",V=SubSpace.Owner},
-			{N="V",T="V",V=SubSpace.Pos}
+			{N="V",T="V",V=SubSpace.Pos},
+			{N="A",T="A",V=SubSpace.Ang}
 		}}
 		
 		NDat.AddDataAll(Data)
@@ -240,21 +252,19 @@ if(SERVER)then
 		end	
 	end
 
-	function SubSpaces:WorldGenLayer(Name,Vect,Type)
+	function SubSpaces:WorldGenLayer(Name,Vect,Ang,Type)
 		if(not SubSpaces.SubSpaces[Name])then
 			print("Generating "..Name.." subspace")
 			local SubSpace = {}
 			--local id = table.insert( SubSpaces.SubSpaces, SubSpace )
-			SubSpace = {ID=Name, Owner = "World", Title = Name , Pos = Vect, Entitys={}, Age=CurTime() , Importance = Type}
+			SubSpace = {ID=Name, Owner = "World", Title = Name , Pos = Vect, Ang = Ang, Entitys={}, Age=CurTime() , Importance = Type}
 			SubSpaces.SubSpaces[Name]=SubSpace
 			
 			SubSpaces.SubSpaceKeys[tostring(Vect)]=SubSpaces.SubSpaces[Name] --Vector to subspace key link.
 			
 			SubSpaces:SyncSubSpace(Name,SubSpace)
 		else
-			if(Vect~=Vector(0,0,0))then
-				SubSpaces.SubSpaceKeys[tostring(Vect)]=SubSpaces.SubSpaces[Name] --Vector to subspace key link.
-			end
+			SubSpaces.SubSpaceKeys[tostring(Vect)]=SubSpaces.SubSpaces[Name] --Vector to subspace key link.
 			Utl:Debug("SubSpaces","Error Subspace: "..Name.." already exists!","Error")
 		end
 	end
@@ -265,7 +275,7 @@ if(SERVER)then
 		if(SubSpaces.SubSpaces[ID])then
 			return ShipS.GetEmptySubSpace() --Name was taken, lets try again.
 		else
-			SubSpaces:WorldGenLayer(ID,Vector(0,0,0),false)--Generate the subspace using our new name.
+			SubSpaces:WorldGenLayer(ID,Vector(0,0,0),Angle(0,0,0),false)--Generate the subspace using our new name.
 			return ID --Return our new subspace
 		end
 	end
@@ -274,7 +284,7 @@ if(SERVER)then
 		
 	end
 		
-	SubSpaces:WorldGenLayer(SubSpaces.MainSpace,Vector(0,0,0),true)
+	SubSpaces:WorldGenLayer(SubSpaces.MainSpace,Vector(0,0,0),Angle(0,0,0),true)
 	
 	function SubSpaces:DestroyLayerByKey( Key,Protect )
 		local STable = SubSpaces.SubSpaces[Key]
@@ -422,7 +432,7 @@ if(SERVER)then
 else	
 	--SubSpaces.SubSpaces = SubSpaces.SubSpaces or {}
 	Singularity.Utl:HookNet("subspace_create","",function(D)
-		local id, title, owner, pos = D.N, D.T, D.O, D.V
+		local id, title, owner, pos, ang = D.N, D.T, D.O, D.V, D.A
 		if ( SubSpaces.layerList ) then		
 			if(SubSpaces.SubSpaces[id])then
 			--	print("SubSpace already synced.")
@@ -430,7 +440,7 @@ else
 				SubSpaces.layerList:AddLayer( id, title, owner, pos )
 			end
 		end
-		SubSpaces.SubSpaces[id]={Owner=owner,Title=Title,Pos=pos}
+		SubSpaces.SubSpaces[id]={Owner=owner,Title=Title,Pos=pos,Ang=ang}
 		--print(id.." is synced now clientside.")		
 	end)
 	
