@@ -43,19 +43,19 @@ function EFFECT:Init(data)
 	
 	//local Anchor = SubSpaces.GetSubSpaceTable(ent:GetSubSpace()).Anchor
 
-	
+	local SetAng = ent:WorldToLocalAngles(SubAng-PlyAng)// - PlyAng
 	self:SetModel(Mod)
 	//self:SetAngles(Anchor:WorldToLocalAngles(ent:GetAngles())+(SubAng-PlyAng))
-
-	self:SetAngles( Angle(0,0,-45)   ) //ent:GetAngles()    )// ent:WorldToLocalAngles(SubAng-PlyAng)) -6,-133,-6 -38,-133,27
+	//SPLIT ANGLE = Angle(Ang.p,Ang.y,Ang.r)
+	self:SetAngles(SetAng) //Angle(0,0,-45) + ent:LocalToWorldAngles(Ang)  ) //ent:GetAngles()    )// ent:WorldToLocalAngles(SubAng-PlyAng)) -6,-133,-6 | -38,-133,27
 	self:SetSkin(ent:GetSkin())
 	self:SetColor(ent:GetColor())
 	
-	/*
+	
 	if(Mod == "models/hunter/triangles/2x2.mdl") then 
-		print("DEBUG: Model = ["..Mod.."] SubAng = ["..tostring(SubAng).."] PlyAng = ["..tostring(PlyAng).."] Ang ["..tostring(Ang).."]")
+		print("DEBUG: Ang ["..tostring(Ang).."] Set to: ["..tostring(SetAng).."]")
 	end
-	*/
+	
 	local Scale = (ent.SkyScale or 1)*(1/SubSpaces.Scale)
 	
 	
