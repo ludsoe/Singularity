@@ -32,12 +32,6 @@ function SubSpaces.SubSpaceAng(subspace)
 	return Angle(0,0,0)
 end
 
-function SubSpaces.GetSubSpaceTable(subspace)
-	if SubSpaces.SubSpaces[subspace] then
-		return SubSpaces.SubSpaces[subspace]
-	end	
-end
-
 --[[------------------------------------------------------------------------------------------------------------------
 	Basic set and get subspace functions
 ------------------------------------------------------------------------------------------------------------------]]--
@@ -52,7 +46,6 @@ function ENT:SetSubSpace( subspace )
 	SubSpaces.SubSpaces[subspace].Entitys[self:EntIndex()]=self
 
 	self:SetNWString( "SubSpace", subspace )
-	self:SetNWVector( "UniPos", SubSpaces.SubSpaces[subspace].Pos or Vector(0,0,0) )
 	if ( !self.UsingCamera ) then self:SetViewSubSpace( subspace ) end
 end
 
@@ -196,12 +189,7 @@ function SubSpaces.GetMapSize()
 	print("Scale "..SubSpaces.Scale)
 end
 
-Utl:SetupThinkHook("SubSpaceInit",0,1,function()
-	if SERVER then
-		SubSpaces:WorldGenLayer(SubSpaces.MainSpace,Vector(0,0,0),Angle(0,0,0),true)
-	end
-	SubSpaces.GetMapSize() 
-end)--Because running it first things first caused crashs.
+Utl:SetupThinkHook("GetMapSize",0,1,function() SubSpaces.GetMapSize() end)--Because running it first things first caused crashs.
 
 if(SERVER)then
 	
@@ -304,7 +292,7 @@ if(SERVER)then
 			SubSpaces:WorldGenLayer(ID,Vector(0,0,0),Angle(0,0,0),false)--Generate the subspace using our new name.
 			return ID --Return our new subspace
 		end
-	end 
+	end
 	
 	function SubSpaces:MoveSubSpace(Name,Vect,Ang)
 		local SubSpace = SubSpaces.SubSpaces[Name]
@@ -313,6 +301,8 @@ if(SERVER)then
 		
 		SubSpaces:UpdateSubSpace(SubSpace)
 	end
+		
+	SubSpaces:WorldGenLayer(SubSpaces.MainSpace,Vector(0,0,0),Angle(0,0,0),true)
 	
 	function SubSpaces:DestroyLayerByKey( Key,Protect )
 		local STable = SubSpaces.SubSpaces[Key]
