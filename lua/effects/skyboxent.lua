@@ -38,7 +38,7 @@ function EFFECT:Init(data)
 	mat:Scale(Vector(Scale,Scale,Scale))
 	self:EnableMatrix("RenderMultiply", mat)
 
-	--Pos:Rotate(SubAng)
+	Pos:Rotate(SubAng-PlyAng)
 	SubPos:Rotate(PlyAng)
 	local Spot = ((Pos+(SubSpaces.MapSize*SubPos))/SubSpaces.Scale)
 	
