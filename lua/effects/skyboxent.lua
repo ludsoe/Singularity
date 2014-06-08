@@ -1,25 +1,10 @@
-
-local BadTypes = {"sing_playerspawn","class","C_"}
-
-
-function EFFECT:IsGood(T)
-	for _,b in pairs(BadTypes) do
-		if(string.find(T,b))then
-			return false
-		end
-	end
-	return true
-end
-
 function EFFECT:Init(data)
-	
 	local ent = data:GetEntity()
 	--print(tostring(ent))
 	if(not ent or not ent:IsValid())then return end
 	
 	local Mod,Pos,Type = ent:GetModel(),ent:GetPos(),ent:GetClass()
 	if(not Mod or Mod=="")then return end
-	if(not self:IsGood(Type))then return end
 	
 	local SubPos = ent:GetUniPos()-LocalPlayer():GetUniPos()
 	local SubAng,PlyAng = ent:GetUniAng(),LocalPlayer():GetUniAng()

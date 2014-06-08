@@ -190,7 +190,12 @@ function SubSpaces.GetMapSize()
 	print("Scale "..SubSpaces.Scale)
 end
 
-Utl:SetupThinkHook("GetMapSize",0,1,function() SubSpaces.GetMapSize() end)--Because running it first things first caused crashs.
+Utl:SetupThinkHook("SubSpaceInit",0,1,function()
+	if SERVER then
+		SubSpaces:WorldGenLayer(SubSpaces.MainSpace,Vector(0,0,0),Angle(0,0,0),true)
+	end
+	SubSpaces.GetMapSize() 
+end)--Because running it first things first caused crashs.
 
 if(SERVER)then
 	
@@ -238,6 +243,7 @@ if(SERVER)then
 			{N="N",T="S",V=Name},
 			{N="T",T="S",V=SubSpace.Title},
 			{N="O",T="S",V=SubSpace.Owner},
+			{N="E",T="E",V=SubSpace.Anc},
 			{N="V",T="V",V=SubSpace.Pos},
 			{N="A",T="A",V=SubSpace.Ang}
 		}}
@@ -269,14 +275,16 @@ if(SERVER)then
 			print("Generating "..Name.." subspace")
 			local SubSpace = {}
 			--local id = table.insert( SubSpaces.SubSpaces, SubSpace )
-			SubSpace = {ID=Name, Owner = "World", Title = Name , Pos = Vect, Ang = Ang, Entitys={}, Age=CurTime() , Importance = Type}
+			local anchor = ents.Create("sing_anchor")
+			anchor:SetPos(Vector(0,0,0)) anchor:SetAngles(Angle(0,0,0))
+			
+			SubSpace = {ID=Name, Owner = "World", Title = Name , Pos = Vect, Ang = Ang, Entitys={}, Age=CurTime(), Anc=anchor, Importance = Type}
 			SubSpaces.SubSpaces[Name]=SubSpace
 			
 			SubSpaces.SubSpaceKeys[tostring(Vect)]=SubSpaces.SubSpaces[Name] --Vector to subspace key link.
 			
 			SubSpaces:SyncSubSpace(Name,SubSpace)
 		else
-			SubSpaces.SubSpaceKeys[tostring(Vect)]=SubSpaces.SubSpaces[Name] --Vector to subspace key link.
 			Utl:Debug("SubSpaces","Error Subspace: "..Name.." already exists!","Error")
 		end
 	end
@@ -290,7 +298,7 @@ if(SERVER)then
 			SubSpaces:WorldGenLayer(ID,Vector(0,0,0),Angle(0,0,0),false)--Generate the subspace using our new name.
 			return ID --Return our new subspace
 		end
-	end
+	end 
 	
 	function SubSpaces:MoveSubSpace(Name,Vect,Ang)
 		local SubSpace = SubSpaces.SubSpaces[Name]
@@ -299,8 +307,6 @@ if(SERVER)then
 		
 		SubSpaces:UpdateSubSpace(SubSpace)
 	end
-		
-	SubSpaces:WorldGenLayer(SubSpaces.MainSpace,Vector(0,0,0),Angle(0,0,0),true)
 	
 	function SubSpaces:DestroyLayerByKey( Key,Protect )
 		local STable = SubSpaces.SubSpaces[Key]
@@ -448,7 +454,7 @@ if(SERVER)then
 else	
 	--SubSpaces.SubSpaces = SubSpaces.SubSpaces or {}
 	Singularity.Utl:HookNet("subspace_create","",function(D)
-		local id, title, owner, pos, ang = D.N, D.T, D.O, D.V, D.A
+		local id, title, owner, pos, ang, anc = D.N, D.T, D.O, D.V, D.A, D.E
 		if ( SubSpaces.layerList ) then		
 			if(SubSpaces.SubSpaces[id])then
 			--	print("SubSpace already synced.")
@@ -456,7 +462,7 @@ else
 				SubSpaces.layerList:AddLayer( id, title, owner, pos )
 			end
 		end
-		SubSpaces.SubSpaces[id]={Owner=owner,Title=Title,Pos=pos,Ang=ang}
+		SubSpaces.SubSpaces[id]={Owner=owner,Title=Title,Pos=pos,Ang=ang,Anchor=anc}
 		--print(id.." is synced now clientside.")		
 	end)
 	
