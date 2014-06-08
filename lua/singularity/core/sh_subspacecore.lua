@@ -17,31 +17,10 @@ SubSpaces.MapSize = SubSpaces.MapSize or 16000
 SubSpaces.SkySize = SubSpaces.SkySize or SubSpaces.MapSize/128
 SubSpaces.Scale = SubSpaces.Scale or 128
 SubSpaces.MainSpace = "MainSpace"
-SubSpaces.NullSpace = "NullSpace"
-
---[[------------------------------------------------------------------------------------------------------------------
-	SubSpace Functions
-------------------------------------------------------------------------------------------------------------------]]--
-if E2Lib then
-	E2Lib.clampPos = function(p) return p end
-end
-
-local MS,MF = function() return SubSpaces.MapSize end,function(N)
-	if N<0 then return math.ceil(N) end
-	return math.floor(N) 
-end
-function SubSpaces.ConvVector(V)
-	local X,Y,Z = MF(V.x/MS()),MF(V.y/MS()),MF(V.z/MS())
-	if X == -0 then X=0 end if Y == -0 then Y=0 end if Z == -0 then Z=0 end
-	local SubS = Vector(X,Y,Z)
-	local Sub=SubSpaces:SubSpaceFromVector(SubS)
-	return V-(SubS*MS()),Sub
-end
 
 --[[------------------------------------------------------------------------------------------------------------------
 	Basic set and get subspace functions
 ------------------------------------------------------------------------------------------------------------------]]--
-
 
 function ENT:SetSubSpace( subspace )
 	local OldSub = self:GetSubSpace()
@@ -66,33 +45,11 @@ function ENT:GetSubSpace()
 end
 
 function ENT:GetUniPos()
-	return self:GetNWVector( "UniPos", Vector(0,0,0) )
+	return SubSpaces.SubSpacePos(self:GetSubSpace())
 end
 	
 function ENT:GetViewSubSpace()
 	return self:GetNWString("ViewSubSpace",SubSpaces.MainSpace)
-end
-
---Lets hack :GetPos()
-if SERVER then
-	if not ENT.OriginalGetPos then
-		ENT.OriginalGetPos = ENT.GetPos
-
-		function ENT:GetPos()
-			return (self:GetUniPos()*SubSpaces.MapSize)+self:OriginalGetPos()
-		end
-	end
-
-	if not ENT.OriginalSetPos then
-		ENT.OriginalSetPos = ENT.SetPos
-	end	
-	function ENT:SetPos(Pos)
-		local P,S = SubSpaces.ConvVector(Pos)
-
-		self:SetSubSpace( S )
-		self:SetViewSubSpace( S )
-		return self:OriginalSetPos(P)
-	end	
 end
 
 --[[------------------------------------------------------------------------------------------------------------------
@@ -312,6 +269,8 @@ if(SERVER)then
 	end
 
 	SubSpaces:WorldGenLayer(SubSpaces.MainSpace,Vector(0,0,0),true)
+	SubSpaces:GetEmptySubSpace()
+	SubSpaces:GetEmptySubSpace()
 	
 	function SubSpaces:DestroyLayerByKey( Key,Protect )
 		local STable = SubSpaces.SubSpaces[Key]
@@ -534,7 +493,6 @@ else
 		
 		for _, ent in ipairs( ents.GetAll() ) do
 			SubSpaces:SetEntityVisiblity( ent, localLayer )			
-			ent.SubSpace = ent:GetSubSpace()
 		end
 	end
 	hook.Add( "RenderScene", "SingularityEntityDrawing", SubSpaces.RenderEntities )

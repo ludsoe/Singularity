@@ -37,7 +37,7 @@ function EFFECT:Init(data)
 	mat:Scale(Vector(Scale,Scale,Scale))
 	self:EnableMatrix("RenderMultiply", mat)
 
-	local Spot = (Pos+((SubSpaces.MapSize*1.5)*SubPos))/SubSpaces.Scale
+	local Spot = (Pos+(SubSpaces.MapSize*SubPos))/SubSpaces.Scale
 	
 	--print(tostring(Spot))
 	

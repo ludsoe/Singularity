@@ -20,7 +20,6 @@ function PANEL:PerformLayout()
 	self:SetTall( 400 )
 	
 	self.List:StretchToParent( 0, 0, 0, 0 )
-	self.List:StretchBottomTo( self.CreateButton, 10 )
 end
 
 function PANEL:AddLayer( id, title, owner, pos)

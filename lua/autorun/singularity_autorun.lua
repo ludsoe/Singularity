@@ -21,13 +21,12 @@ local LoadFile = Singularity.LoadFile --Lel Speed.
 LoadFile(CoreF.."sh_utility.lua",1)
 LoadFile(CoreF.."sh_entitypersistance.lua",1)
 LoadFile(CoreF.."sh_subspacecore.lua",1)
-LoadFile(CoreF.."sh_cubicuniverse.lua",1)
 LoadFile(DataF.."init.lua",1)
 LoadFile(MainF.."init.lua",1)
 LoadFile(CoreF.."sh_emptylua.lua",1)
 
 --Client
-LoadFile(CoreF.."sv_propprotect.lua",0)
+LoadFile(CoreF.."sv_propprotect.lua",1)
 
 if CLIENT then
 	language.Add( "worldspawn", "World" )
