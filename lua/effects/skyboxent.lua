@@ -22,12 +22,12 @@ function EFFECT:Init(data)
 	if(not self:IsGood(Type))then return end
 	
 	local SubPos = ent:GetUniPos()-LocalPlayer():GetUniPos()
-	local SubAng = ent:GetUniAng()-LocalPlayer():GetUniAng()
+	local SubAng,PlyAng = ent:GetUniAng(),LocalPlayer():GetUniAng()
 	
 	if(SubPos.X>13 or SubPos.Y>13 or SubPos.Z>13)then return end --Dont render it if its too far to view.
 	
 	self:SetModel(Mod)
-	self:SetAngles(ent:GetAngles()+SubAng)
+	self:SetAngles(ent:GetAngles()+(SubAng-PlyAng))
 	self:SetSkin(ent:GetSkin())
 	self:SetColor(ent:GetColor())
 	
@@ -38,7 +38,8 @@ function EFFECT:Init(data)
 	mat:Scale(Vector(Scale,Scale,Scale))
 	self:EnableMatrix("RenderMultiply", mat)
 
-	Pos:Rotate(SubAng)
+	Pos:Rotate(-SubAng)
+	SubPos:Rotate(PlyAng)
 	local Spot = ((Pos+(SubSpaces.MapSize*SubPos))/SubSpaces.Scale)
 	
 	--print(tostring(Spot))
