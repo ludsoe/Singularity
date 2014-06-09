@@ -37,16 +37,19 @@ function EFFECT:Init(data)
 	if(not self:IsGood(Type))then return end
 	
 	local SubPos = ent:GetUniPos()-LocalPlayer():GetUniPos()
-	local SubAng,PlyAng = ent:GetUniAng(),LocalPlayer():GetUniAng() //ent:GetUniAng() Returns ent subspace angle
-	
 	if(SubPos.X>13 or SubPos.Y>13 or SubPos.Z>13)then return end --Dont render it if its too far to view.
 	
-	SubSpaces.GetSubSpaceEntity(ent:GetSubSpace())
+	local SubAng,PlyAng = ent:GetUniAng(),LocalPlayer():GetUniAng() //ent:GetUniAng() Returns ent subspace angle
+	local Anchor = SubSpaces.GetSubSpaceEntity(ent:GetSubSpace())
+	if not IsValid(Anchor) then return end
 	
-	local SetAng = ent:WorldToLocalAngles(SubAng-PlyAng)+ent:GetAngles() --SubAng-PlyAng // - PlyAng
+	Anchor:SetAngles(SubAng-PlyAng)
 	
 	self:SetModel(Mod)
-	self:SetAngles(SetAng)
+	
+	local Angles = Anchor:LocalToWorldAngles(ent:GetAngles())
+		
+	self:SetAngles(Angles)
 	self:SetSkin(ent:GetSkin())
 	self:SetColor(ent:GetColor())
 	
@@ -55,8 +58,10 @@ function EFFECT:Init(data)
 	local mat = Matrix()
 	mat:Scale(Vector(Scale,Scale,Scale))
 	self:EnableMatrix("RenderMultiply", mat)
-
-	Pos:Rotate(SubAng-PlyAng)
+	
+	--Pos:Rotate(SubAng-PlyAng)
+	Pos=Anchor:LocalToWorld(Pos)
+		
 	SubPos:Rotate(PlyAng)
 	local Spot = ((Pos+(SubSpaces.MapSize*SubPos))/SubSpaces.Scale)
 	

@@ -488,11 +488,11 @@ else
 	
 	function SubSpaces.GetSubSpaceEntity(subspace)
 		local Table = SubSpaces.SubSpaceTab(subspace)
-		if not Table then print("No Table for Subspace: "..subspace) return end
+		if not Table then return end
 		if not IsValid(Table.Anchor) then
 			Table.Anchor = ents.CreateClientProp()
 		end
-		Table.Anchor:SetAngles(Table.Ang)
+		--Table.Anchor:SetAngles(Table.Ang)
 		return Table.Anchor
 	end
 	
