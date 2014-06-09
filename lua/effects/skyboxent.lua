@@ -63,7 +63,7 @@ function EFFECT:Init(data)
 	Pos=Anchor:LocalToWorld(Pos)
 		
 	SubPos:Rotate(PlyAng)
-	local Spot = ((Pos+(SubSpaces.MapSize*SubPos))/SubSpaces.Scale)
+	local Spot = (Pos+SubPos)/SubSpaces.Scale
 	
 	--print(tostring(Spot))
 	
