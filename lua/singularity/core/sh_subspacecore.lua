@@ -237,7 +237,6 @@ if(SERVER)then
 			{N="N",T="S",V=Name},
 			{N="T",T="S",V=SubSpace.Title},
 			{N="O",T="S",V=SubSpace.Owner},
-			{N="E",T="E",V=SubSpace.Anc},
 			{N="V",T="V",V=SubSpace.Pos},
 			{N="A",T="A",V=SubSpace.Ang}
 		}}
@@ -268,11 +267,8 @@ if(SERVER)then
 		if(not SubSpaces.SubSpaces[Name])then
 			print("Generating "..Name.." subspace")
 			local SubSpace = {}
-			--local id = table.insert( SubSpaces.SubSpaces, SubSpace )
-			local anchor = ents.Create("sing_anchor")
-			anchor:SetPos(Vector(0,0,0)) anchor:SetAngles(Angle(0,0,0))
-			
-			SubSpace = {ID=Name, Owner = "World", Title = Name , Pos = Vect, Ang = Ang, Entitys={}, Age=CurTime(), Anc=anchor, Importance = Type}
+
+			SubSpace = {ID=Name, Owner = "World", Title = Name , Pos = Vect, Ang = Ang, Entitys={}, Age=CurTime(), Importance = Type}
 			SubSpaces.SubSpaces[Name]=SubSpace
 			
 			SubSpaces.SubSpaceKeys[tostring(Vect)]=SubSpaces.SubSpaces[Name] --Vector to subspace key link.
@@ -357,40 +353,36 @@ if(SERVER)then
 		Constraint handling
 	------------------------------------------------------------------------------------------------------------------]]--
 
-	if not SubSpaces.OldKeyframeRope then
-		SubSpaces.OldKeyframeRope = constraint.CreateKeyframeRope
-	
-		function constraint.CreateKeyframeRope( pos, width, material, constr, ent1, lpos1, bone1, ent2, lpos2, bone2, kv )
-			local rope = SubSpaces.OldKeyframeRope( pos, width, material, constr, ent1, lpos1, bone1, ent2, lpos2, bone2, kv )
-			
-			if ( rope ) then
-				if ( ent1:IsWorld() and !ent2:IsWorld() ) then
-					rope:SetNWEntity( "CEnt", ent2 )
-				elseif ( !ent1:IsWorld() and ent2:IsWorld() ) then
-					rope:SetNWEntity( "CEnt", ent1 )
-				else
-					// For a pulley, the two specified entities are both the world for the middle rope, so we just remember the entity from the first rope
-					rope:SetNWEntity( "CEnt", SubSpaces.KeyframeEntityCache )
-				end
+	if not SubSpaces.OldKeyframeRope then SubSpaces.OldKeyframeRope = constraint.CreateKeyframeRope end
+	function constraint.CreateKeyframeRope( pos, width, material, constr, ent1, lpos1, bone1, ent2, lpos2, bone2, kv )
+		local rope = SubSpaces.OldKeyframeRope( pos, width, material, constr, ent1, lpos1, bone1, ent2, lpos2, bone2, kv )
+		
+		if ( rope ) then
+			if ( ent1:IsWorld() and !ent2:IsWorld() ) then
+				rope:SetNWEntity( "CEnt", ent2 )
+			elseif ( !ent1:IsWorld() and ent2:IsWorld() ) then
+				rope:SetNWEntity( "CEnt", ent1 )
+			else
+				// For a pulley, the two specified entities are both the world for the middle rope, so we just remember the entity from the first rope
+				rope:SetNWEntity( "CEnt", SubSpaces.KeyframeEntityCache )
 			end
-			
-			SubSpaces.KeyframeEntityCache = ent1
-			
-			return rope
-		end		
-	end
+		end
+		
+		SubSpaces.KeyframeEntityCache = ent1
+		
+		return rope
+	end		
+	
 	
 	--[[------------------------------------------------------------------------------------------------------------------
 		Camera handling
 	------------------------------------------------------------------------------------------------------------------]]--
-	if not SubSpaces.OldSetViewEntity then
-		SubSpaces.OldSetViewEntity = PLY.SetViewEntity
-		function PLY:SetViewEntity( ent )
-			self:SetViewSubSpace( ent:GetSubSpace() )
-			return SubSpaces.OldSetViewEntity( self, ent )
-		end
+	if not SubSpaces.OldSetViewEntity then SubSpaces.OldSetViewEntity = PLY.SetViewEntity end
+	function PLY:SetViewEntity( ent )
+		self:SetViewSubSpace( ent:GetSubSpace() )
+		return SubSpaces.OldSetViewEntity( self, ent )
 	end
-
+		
 	--[[------------------------------------------------------------------------------------------------------------------
 		Set the subspace of spawned entities
 	------------------------------------------------------------------------------------------------------------------]]--
@@ -430,27 +422,23 @@ if(SERVER)then
 	Utl:HookHook("OnEntityCreated","SubSpace",SubSpaces.OnEntityCreated,1)
 	Utl:HookHook("OnRemove","SubSpace",SubSpaces.OnEntityRemove,1)	
 	
-	if not SubSpaces.OriginalAddCount then
-		SubSpaces.OriginalAddCount = PLY.AddCount
-		
-		function PLY:AddCount( type, ent )
-			ent:SetSubSpace( self:GetSubSpace() )
-			return SubSpaces.OriginalAddCount( self, type, ent )
-		end
+	if not SubSpaces.OriginalAddCount then SubSpaces.OriginalAddCount = PLY.AddCount end
+	function PLY:AddCount( type, ent )
+		ent:SetSubSpace( self:GetSubSpace() )
+		return SubSpaces.OriginalAddCount( self, type, ent )
 	end
 	
-	if not SubSpaces.OriginalCleanup then
-		SubSpaces.OriginalCleanup = cleanup.Add
 	
-		function cleanup.Add( ply, type, ent )
-			if ( ent ) then ent:SetSubSpace( ply:GetSubSpace() ) end
-			return SubSpaces.OriginalCleanup( ply, type, ent )
-		end
+	if not SubSpaces.OriginalCleanup then SubSpaces.OriginalCleanup = cleanup.Add end
+	function cleanup.Add( ply, type, ent )
+		if ( ent ) then ent:SetSubSpace( ply:GetSubSpace() ) end
+		return SubSpaces.OriginalCleanup( ply, type, ent )
 	end
+	
 else	
 	--SubSpaces.SubSpaces = SubSpaces.SubSpaces or {}
 	Singularity.Utl:HookNet("subspace_create","",function(D)
-		local id, title, owner, pos, ang, anc = D.N, D.T, D.O, D.V, D.A, D.E
+		local id, title, owner, pos, ang = D.N, D.T, D.O, D.V, D.A
 		if ( SubSpaces.layerList ) then		
 			if(SubSpaces.SubSpaces[id])then
 			--	print("SubSpace already synced.")
@@ -458,7 +446,7 @@ else
 				SubSpaces.layerList:AddLayer( id, title, owner, pos )
 			end
 		end
-		SubSpaces.SubSpaces[id]={Owner=owner,Title=Title,Pos=pos,Ang=ang,Anchor=anc}
+		SubSpaces.SubSpaces[id]={Owner=owner,Title=Title,Pos=pos,Ang=ang}
 		--print(id.." is synced now clientside.")		
 	end)
 	

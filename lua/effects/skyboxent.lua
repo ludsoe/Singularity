@@ -41,23 +41,14 @@ function EFFECT:Init(data)
 	
 	if(SubPos.X>13 or SubPos.Y>13 or SubPos.Z>13)then return end --Dont render it if its too far to view.
 	
-	//local Anchor = SubSpaces.GetSubSpaceTable(ent:GetSubSpace()).Anchor
-
-	local SetAng = ent:WorldToLocalAngles(SubAng-PlyAng)// - PlyAng
+	local SetAng = ent:GetAngles()+(SubAng-PlyAng)--SubAng-PlyAng // - PlyAng
+	
 	self:SetModel(Mod)
-	//self:SetAngles(Anchor:WorldToLocalAngles(ent:GetAngles())+(SubAng-PlyAng))
-	//SPLIT ANGLE = Angle(Ang.p,Ang.y,Ang.r)
-	self:SetAngles(SetAng) //Angle(0,0,-45) + ent:LocalToWorldAngles(Ang)  ) //ent:GetAngles()    )// ent:WorldToLocalAngles(SubAng-PlyAng)) -6,-133,-6 | -38,-133,27
+	self:SetAngles(SetAng)
 	self:SetSkin(ent:GetSkin())
 	self:SetColor(ent:GetColor())
 	
-	
-	if(Mod == "models/hunter/triangles/2x2.mdl") then 
-		print("DEBUG: Ang ["..tostring(Ang).."] Set to: ["..tostring(SetAng).."]")
-	end
-	
 	local Scale = (ent.SkyScale or 1)*(1/SubSpaces.Scale)
-	
 	
 	local mat = Matrix()
 	mat:Scale(Vector(Scale,Scale,Scale))
