@@ -32,6 +32,10 @@ function SubSpaces.SubSpaceAng(subspace)
 	return Angle(0,0,0)
 end
 
+function SubSpaces.SubSpaceTab(subspace)
+	return SubSpaces.SubSpaces[subspace]
+end
+
 --[[------------------------------------------------------------------------------------------------------------------
 	Basic set and get subspace functions
 ------------------------------------------------------------------------------------------------------------------]]--
@@ -481,6 +485,16 @@ else
 			end
 		end	
 	end )
+	
+	function SubSpaces.GetSubSpaceEntity(subspace)
+		local Table = SubSpaces.SubSpaceTab(subspace)
+		if not Table then print("No Table for Subspace: "..subspace) return end
+		if not IsValid(Table.Anchor) then
+			Table.Anchor = ents.CreateClientProp()
+		end
+		Table.Anchor:SetAngles(Table.Ang)
+		return Table.Anchor
+	end
 	
 	--[[------------------------------------------------------------------------------------------------------------------
 		Rendering
