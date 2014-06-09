@@ -41,7 +41,7 @@ function EFFECT:Init(data)
 	
 	if(SubPos.X>13 or SubPos.Y>13 or SubPos.Z>13)then return end --Dont render it if its too far to view.
 	
-	local SetAng = ent:GetAngles()+(SubAng-PlyAng)--SubAng-PlyAng // - PlyAng
+	local SetAng = ent:GetAngles()+ent:WorldToLocalAngles(SubAng-PlyAng)--SubAng-PlyAng // - PlyAng
 	
 	self:SetModel(Mod)
 	self:SetAngles(SetAng)
