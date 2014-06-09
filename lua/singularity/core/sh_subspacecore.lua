@@ -1,11 +1,13 @@
 --[[----------------------------------------------------
 SubSpace Core -Manages the subspace systems of the mod allowing an bigger universe.
 ----------------------------------------------------]]--
-
-SubSpaces = SubSpaces or {}
 local Utl = Singularity.Utl --Makes it easier to read the code.
 local NDat = Utl.NetMan --Ease link to the netdata table.
+local LoadFile = Singularity.LoadFile
+
+SubSpaces = SubSpaces or {}
 local SubSpaces = SubSpaces --SPEED!!! WEEEEEE
+
 local math,ENT,PLY = math,FindMetaTable( "Entity" ),FindMetaTable( "Player" )
 
 SubSpaces.SubSpaces = SubSpaces.SubSpaces or {}
@@ -92,52 +94,6 @@ function ShouldEntitiesCollide( ent1, ent2 )
 end
 hook.Add( "ShouldCollide", "LayerCollide", ShouldEntitiesCollide )
 
---[[------------------------------------------------------------------------------------------------------------------
-	Trace modification
-------------------------------------------------------------------------------------------------------------------]]--
-
-if(not SubSpaces.OriginalTraceLine)then SubSpaces.OriginalTraceLine = util.TraceLine end
-function util.TraceLine( td, subspace )
-	if ( !subspace ) then 
-		if(SERVER)then
-			subspace = "Global"
-		else
-			subspace = LocalPlayer():GetSubSpace()
-		end
-	end
-	local originalResult = SubSpaces.OriginalTraceLine( td )
-	if ( !originalResult.Entity:IsValid() or originalResult.Entity:GetSubSpace() == subspace or subspace=="Global") then
-		return originalResult
-	else
-		if ( td.filter ) then
-			if ( type( td.filter ) == "table" ) then
-				table.insert( td.filter, originalResult.Entity )
-			else
-				td.filter = { td.filter, originalResult.Entity }
-			end
-		else
-			td.filter = originalResult.Entity
-		end
-		
-		return util.TraceLine( td )
-	end
-end
-
-if not SubSpaces.OriginalPlayerTrace then SubSpaces.OriginalPlayerTrace = util.GetPlayerTrace end
-function util.GetPlayerTrace( ply, dir )
-	local originalResult = SubSpaces.OriginalPlayerTrace( ply, dir )
-	originalResult.filter = { ply }
-	
-	for _, ent in ipairs( ents.GetAll() ) do
-		if ( ent:GetSubSpace() != ply:GetSubSpace() ) then
-			table.insert( originalResult.filter, ent )
-		end
-	end
-	
-	return originalResult
-end
-
- 
  --Function to grab the maps size using raytracing and guessing.
 function SubSpaces.GetAreaSize(Vec)
 	local Directions = {
@@ -195,43 +151,19 @@ end
 
 Utl:SetupThinkHook("GetMapSize",0,1,function() SubSpaces.GetMapSize() end)--Because running it first things first caused crashs.
 
-if(SERVER)then
-	
-	--[[------------------------------------------------------------------------------------------------------------------
-		Serverside subspaces core
-	------------------------------------------------------------------------------------------------------------------]]--
+Utl:SetupThinkHook("SubSpaceMovement",0.01,0,function() 
+	for id, subspace in pairs( SubSpaces.SubSpaces ) do
+		subspace.Pos = subspace.Pos+(subspace.VVel/100) --Move the subspace based on its velocity.
+		subspace.Ang = subspace.Ang+(Angle(subspace.AVel.p/100,subspace.AVel.y/100,subspace.AVel.r/100)) --Rotate it now.
+	end			
+end)
 
+if(SERVER)then
 	AddCSLuaFile( "vgui/layerlist.lua" )
 	AddCSLuaFile( "vgui/layerlist_layer.lua" )
-	
-	local DistCheck = function(ply,subspace)
-		local Dist = ply:GetUniPos():Distance(subspace.Pos)
-		if(Dist<50)then
-			return true
-		end
-	end
-	
-	local Func = function()
-		for id, subspace in pairs( SubSpaces.SubSpaces ) do
-			if(not subspace.Importance)then --Make sure the subspace has a timed despawn.
-				if(subspace.Age+3<CurTime())then --Give subspaces that were just created time to fill with entities.
-					if(not Utl:LoopValidPlayers(DistCheck,subspace))then --NearbyPlayers?
-						SubSpaces:DestroyLayerByKey( id ) --Kill it.
-					else
-						subspace.Age=CurTime()--Give the subspace a longer life if it has entitys contained in it.
-					end
-				end
-			end
-		end
-	end
-	Utl:SetupThinkHook("SpaceCleaner",10,0,Func)
-	--Utl:SetupThinkHook("SubSpaceSync",60,0,function() SubSpaces:SyncLayers() end)
-	
 	--[[------------------------------------------------------------------------------------------------------------------
 		SubSpace management
 	------------------------------------------------------------------------------------------------------------------]]--
-	util.AddNetworkString( "subspaces_create" )
-	util.AddNetworkString( "subspaces_update" )
 	util.AddNetworkString( "subspaces_destroyed" )
 	util.AddNetworkString( "subspaces_clearall" )
 	
@@ -253,7 +185,9 @@ if(SERVER)then
 		local Data = {Name="subspaces_update",Val=1,Dat={
 			{N="T",T="S",V=SubSpace.Title},
 			{N="V",T="V",V=SubSpace.Pos},
-			{N="A",T="A",V=SubSpace.Ang}
+			{N="A",T="A",V=SubSpace.Ang},
+			{N="VV",T="V",V=SubSpace.VVel},
+			{N="AV",T="A",V=SubSpace.AVel}			
 		}}
 		
 		NDat.AddDataAll(Data)
@@ -266,15 +200,21 @@ if(SERVER)then
 			SubSpaces:SyncSubSpace(id,subspace)
 		end	
 	end
+	
+	function SubSpaces:UpdateLayers()
+		for id, subspace in pairs( SubSpaces.SubSpaces ) do
+			SubSpaces:UpdateSubSpace(subspace)
+		end	
+	end
+	Utl:SetupThinkHook("SubSpaceUpdate",0.1,0,SubSpaces.UpdateLayers)
 
 	function SubSpaces:WorldGenLayer(Name,Vect,Ang,Type)
 		if(not SubSpaces.SubSpaces[Name])then
 			print("Generating "..Name.." subspace")
 			local SubSpace = {}
 
-			SubSpace = {ID=Name, Owner = "World", Title = Name , Pos = Vect, Ang = Ang, Entitys={}, Age=CurTime(), Importance = Type}
+			SubSpace = {ID=Name, Owner = "World", Title = Name , Pos = Vect, VVel = Vector(), AVel=Angle(), Ang = Ang, Entitys={}, Age=CurTime(), Importance = Type}
 			SubSpaces.SubSpaces[Name]=SubSpace
-			
 			SubSpaces.SubSpaceKeys[tostring(Vect)]=SubSpaces.SubSpaces[Name] --Vector to subspace key link.
 			
 			SubSpaces:SyncSubSpace(Name,SubSpace)
@@ -285,11 +225,11 @@ if(SERVER)then
 	
 	--Ease Function To get a new empty subspace. (At vec(0,0,0) of course.)
 	function SubSpaces:GetEmptySubSpace()
-		local ID = "SubSpace "..math.random(1,600)--Generate a random subspace Name.
+		local ID = "ShipSpace "..math.random(1,999)--Generate a random subspace Name.
 		if(SubSpaces.SubSpaces[ID])then
 			return ShipS.GetEmptySubSpace() --Name was taken, lets try again.
 		else
-			SubSpaces:WorldGenLayer(ID,Vector(0,0,0),Angle(0,0,0),false)--Generate the subspace using our new name.
+			SubSpaces:WorldGenLayer(ID,Vector(),Angle(),false)--Generate the subspace using our new name.
 			return ID --Return our new subspace
 		end
 	end
@@ -301,8 +241,16 @@ if(SERVER)then
 		
 		SubSpaces:UpdateSubSpace(SubSpace)
 	end
+	
+	function SubSpaces:AddMoveSubSpace(Name,Vect,Ang)
+		local SubSpace = SubSpaces.SubSpaces[Name]
+		SubSpace.VVel=Vect or SubSpace.VVel
+		SubSpace.AVel=Ang or SubSpace.AVel
 		
-	SubSpaces:WorldGenLayer(SubSpaces.MainSpace,Vector(0,0,0),Angle(0,0,0),true)
+		SubSpaces:UpdateSubSpace(SubSpace)
+	end
+	
+	SubSpaces:WorldGenLayer(SubSpaces.MainSpace,Vector(),Angle(),true)
 	
 	function SubSpaces:DestroyLayerByKey( Key,Protect )
 		local STable = SubSpaces.SubSpaces[Key]
@@ -342,51 +290,15 @@ if(SERVER)then
 			SubSpaces:DestroyLayerByKey( ply.OwnedLayer,true )
 		end
 	end
-
+	
+	concommand.Add( "subspaces_sync", function( ply ) SubSpaces:SyncLayers() end )
 	concommand.Add( "subspaces_select", function( ply, com, args )
 		if ( ply:IsValid() and SubSpaces.SubSpaces[args[1]] ) then
 			ply.SelectedLayer = args[1] 
 		end
 	end )
 
-	concommand.Add( "subspaces_sync", function( ply )
-		SubSpaces:SyncLayers()
-	end )
 
-	--[[------------------------------------------------------------------------------------------------------------------
-		Constraint handling
-	------------------------------------------------------------------------------------------------------------------]]--
-
-	if not SubSpaces.OldKeyframeRope then SubSpaces.OldKeyframeRope = constraint.CreateKeyframeRope end
-	function constraint.CreateKeyframeRope( pos, width, material, constr, ent1, lpos1, bone1, ent2, lpos2, bone2, kv )
-		local rope = SubSpaces.OldKeyframeRope( pos, width, material, constr, ent1, lpos1, bone1, ent2, lpos2, bone2, kv )
-		
-		if ( rope ) then
-			if ( ent1:IsWorld() and !ent2:IsWorld() ) then
-				rope:SetNWEntity( "CEnt", ent2 )
-			elseif ( !ent1:IsWorld() and ent2:IsWorld() ) then
-				rope:SetNWEntity( "CEnt", ent1 )
-			else
-				// For a pulley, the two specified entities are both the world for the middle rope, so we just remember the entity from the first rope
-				rope:SetNWEntity( "CEnt", SubSpaces.KeyframeEntityCache )
-			end
-		end
-		
-		SubSpaces.KeyframeEntityCache = ent1
-		
-		return rope
-	end		
-	
-	
-	--[[------------------------------------------------------------------------------------------------------------------
-		Camera handling
-	------------------------------------------------------------------------------------------------------------------]]--
-	if not SubSpaces.OldSetViewEntity then SubSpaces.OldSetViewEntity = PLY.SetViewEntity end
-	function PLY:SetViewEntity( ent )
-		self:SetViewSubSpace( ent:GetSubSpace() )
-		return SubSpaces.OldSetViewEntity( self, ent )
-	end
-		
 	--[[------------------------------------------------------------------------------------------------------------------
 		Set the subspace of spawned entities
 	------------------------------------------------------------------------------------------------------------------]]--
@@ -426,19 +338,6 @@ if(SERVER)then
 	Utl:HookHook("OnEntityCreated","SubSpace",SubSpaces.OnEntityCreated,1)
 	Utl:HookHook("OnRemove","SubSpace",SubSpaces.OnEntityRemove,1)	
 	
-	if not SubSpaces.OriginalAddCount then SubSpaces.OriginalAddCount = PLY.AddCount end
-	function PLY:AddCount( type, ent )
-		ent:SetSubSpace( self:GetSubSpace() )
-		return SubSpaces.OriginalAddCount( self, type, ent )
-	end
-	
-	
-	if not SubSpaces.OriginalCleanup then SubSpaces.OriginalCleanup = cleanup.Add end
-	function cleanup.Add( ply, type, ent )
-		if ( ent ) then ent:SetSubSpace( ply:GetSubSpace() ) end
-		return SubSpaces.OriginalCleanup( ply, type, ent )
-	end
-	
 else	
 	--SubSpaces.SubSpaces = SubSpaces.SubSpaces or {}
 	Singularity.Utl:HookNet("subspace_create","",function(D)
@@ -450,17 +349,17 @@ else
 				SubSpaces.layerList:AddLayer( id, title, owner, pos )
 			end
 		end
-		SubSpaces.SubSpaces[id]={Owner=owner,Title=Title,Pos=pos,Ang=ang}
-		--print(id.." is synced now clientside.")		
+		SubSpaces.SubSpaces[id]={Owner=owner,Title=Title,Pos=pos,Ang=ang,VVel=Vector(),AVel=Angle()}
+		--print(id.." is synced now clientside.")
 	end)
 	
 	Singularity.Utl:HookNet("subspaces_update","",function(D)
-		local id, pos, ang = D.T, D.V, D.A
-		local SS = SubSpaces.SubSpaces[id]
-		SS.Pos=pos SS.Ang=ang	
+		local id, pos, ang, vel, angv = D.T, D.V, D.A, D.VV,D.AV
+		local SS = SubSpaces.SubSpaces[id] if not SS then return end
+		SS.Pos=pos SS.Ang=ang SS.AVel = angv SS.VVel = vel
 		--print(id.." is synced now clientside.")		
 	end)
-	
+
 	net.Receive( "subspaces_clearall", function( length, client )
 		if ( SubSpaces.layerList ) then
 			print("Killing ALL subspaces!")
@@ -485,23 +384,14 @@ else
 			end
 		end	
 	end )
-	
-	function SubSpaces.GetSubSpaceEntity(subspace)
-		local Table = SubSpaces.SubSpaceTab(subspace)
-		if not Table then return end
-		if not IsValid(Table.Anchor) then
-			Table.Anchor = ents.CreateClientProp()
-		end
-		--Table.Anchor:SetAngles(Table.Ang)
-		return Table.Anchor
-	end
-	
+		
 	--[[------------------------------------------------------------------------------------------------------------------
 		Rendering
 	------------------------------------------------------------------------------------------------------------------]]--
 	local NoDraw,Logged = {},{}
 	NoDraw["class C_PlayerResource"]=true
 	NoDraw["class C_GMODGameRulesProxy"]=true
+	NoDraw["sing_anchor"]=true
 	function SubSpaces:SetEntityVisiblity( ent, subspace )
 		if ( ent:EntIndex() < 0 or not ent:IsValid() ) then return end
 		
@@ -549,13 +439,15 @@ else
 	end
 	hook.Add( "RenderScene", "SingularityEntityDrawing", SubSpaces.RenderEntities )
 	
-	if not SubSpaces.oldEmitSound then
-		SubSpaces.oldEmitSound = ENT.EmitSound
-		
-		function ENT:EmitSound( filename, soundlevel, pitchpercent )
-			if LocalPlayer():GetSubSpace() ~= self:GetSubSpace() then return end
-			
-			SubSpaces.oldEmitSound( self, filename, soundlevel, pitchpercent )
+	function SubSpaces.GetSubSpaceEntity(subspace)
+		local Table = SubSpaces.SubSpaceTab(subspace)
+		if not Table then return end
+		if not IsValid(Table.Anchor) then
+			Table.Anchor = ents.CreateClientProp()
 		end
+		--Table.Anchor:SetAngles(Table.Ang)
+		return Table.Anchor
 	end
 end
+
+LoadFile("singularity/core/subspace/sh_overrides.lua",1)
