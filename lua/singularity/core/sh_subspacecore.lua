@@ -152,15 +152,19 @@ end
 Utl:SetupThinkHook("GetMapSize",0,1,function() SubSpaces.GetMapSize() end)--Because running it first things first caused crashs.
 
 Utl:SetupThinkHook("SubSpaceMovement",0.01,0,function() 
+	local Mult = 67
+	if not SERVER then Mult=1/FrameTime() end
 	for id, subspace in pairs( SubSpaces.SubSpaces ) do
-		subspace.Pos = subspace.Pos+(subspace.VVel/100) --Move the subspace based on its velocity.
-		subspace.Ang = subspace.Ang+(Angle(subspace.AVel.p/100,subspace.AVel.y/100,subspace.AVel.r/100)) --Rotate it now.
+		subspace.Pos = subspace.Pos+(subspace.VVel/Mult) --Move the subspace based on its velocity.
+		subspace.Ang = subspace.Ang+(Angle(subspace.AVel.p/Mult,subspace.AVel.y/Mult,subspace.AVel.r/Mult)) --Rotate it now.
 	end			
 end)
-
+	
 if(SERVER)then
 	AddCSLuaFile( "vgui/layerlist.lua" )
 	AddCSLuaFile( "vgui/layerlist_layer.lua" )
+	
+
 	--[[------------------------------------------------------------------------------------------------------------------
 		SubSpace management
 	------------------------------------------------------------------------------------------------------------------]]--
@@ -339,6 +343,14 @@ if(SERVER)then
 	Utl:HookHook("OnRemove","SubSpace",SubSpaces.OnEntityRemove,1)	
 	
 else	
+	/*
+	Utl:SetupThinkHook("SubSpaceMovement",0.01,0,function() 
+		for id, subspace in pairs( SubSpaces.SubSpaces ) do
+			subspace.Pos = subspace.Pos+(subspace.VVel/100) --Move the subspace based on its velocity.
+			subspace.Ang = subspace.Ang+(Angle(subspace.AVel.p/100,subspace.AVel.y/100,subspace.AVel.r/100)) --Rotate it now.
+		end			
+	end)*/
+
 	--SubSpaces.SubSpaces = SubSpaces.SubSpaces or {}
 	Singularity.Utl:HookNet("subspace_create","",function(D)
 		local id, title, owner, pos, ang = D.N, D.T, D.O, D.V, D.A

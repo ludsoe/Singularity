@@ -37,7 +37,6 @@ function EFFECT:Init(data)
 	if(not self:IsGood(Type))then return end
 	
 	local SubPos = ent:GetUniPos()-LocalPlayer():GetUniPos()
-	if(SubPos.X>13 or SubPos.Y>13 or SubPos.Z>13)then return end --Dont render it if its too far to view.
 	
 	local SubAng,PlyAng = ent:GetUniAng(),LocalPlayer():GetUniAng() //ent:GetUniAng() Returns ent subspace angle
 	local Anchor = SubSpaces.GetSubSpaceEntity(ent:GetSubSpace())
