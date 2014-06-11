@@ -1,8 +1,3 @@
-if(SERVER)then return end
-
-include( "player_row.lua" )
-include( "player_frame.lua" )
-
 local t = {}
 t.font = "coolvetica"
 t.size = 28

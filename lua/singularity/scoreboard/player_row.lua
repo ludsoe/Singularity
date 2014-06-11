@@ -1,7 +1,3 @@
-if(SERVER)then return end
-
-include( "player_infocard.lua" )
-
 local t = {}
 t.font = "verdana"
 t.size = 16

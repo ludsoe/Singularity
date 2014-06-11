@@ -1,7 +1,3 @@
-//include( "admin_buttons.lua" )
-//include( "vote_button.lua" )
-if(SERVER)then return end
-
 local PANEL = {}
 
 /*---------------------------------------------------------

@@ -1,13 +1,12 @@
 local ScorF = "singularity/scoreboard/"
+local LoadFile = Singularity.LoadFile
 
-Singularity.LoadFile(ScorF.."scoreboard.lua")
-Singularity.LoadFile(ScorF.."player_frame.lua")
-Singularity.LoadFile(ScorF.."player_infocard.lua")
-Singularity.LoadFile(ScorF.."player_row.lua")
+LoadFile(ScorF.."player_frame.lua",0)
+LoadFile(ScorF.."player_infocard.lua",0)
+LoadFile(ScorF.."player_row.lua",0)
+LoadFile(ScorF.."scoreboard.lua",0)
 
-if(SERVER)then
-
-else
+if CLIENT then
 	SingularityBoard = nil
 	
 	timer.Simple( 1.5, function()
