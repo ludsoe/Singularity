@@ -9,7 +9,11 @@ local PB = Singularity.PreBuilt
 
 function SubSpaces:MakePreBuilt(Name,Data)
 	print("Making Prebuilt "..Name)
-	PB[Name]=util.JSONToTable(Data)
+	local Tab = util.JSONToTable(Data)
+	print("Length: "..string.len( Data ))
+	--PrintTable(Tab)
+	PB[Name]=Tab
+	print("T: "..table.Count(PB))
 end
 
 function SubSpaces:LoadData()
@@ -23,6 +27,5 @@ function SubSpaces:LoadData()
 		end
 	end
 end
-if(SERVER)then
-	SubSpaces:LoadData()
-end 
+
+if SERVER then SubSpaces:LoadData() end

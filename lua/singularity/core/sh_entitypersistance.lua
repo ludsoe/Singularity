@@ -92,9 +92,9 @@ if(SERVER)then
 		end
 	end
 	
-	--Loads a contraption from entity data.
+	--Loads a contraption from entity data. And makes it static.
 	function Pers:LoadFromData(Vect,Data,Freeze,SubSpace,Owner)
-		if(not Data)then return end
+		if not Data then print("Error No data!") return end
 		local W,P,M,E,L = Data.Welds,Data.Props,Data.Meta,{},{}
 		
 		for ID, PD in pairs( P ) do
@@ -127,8 +127,9 @@ if(SERVER)then
 			
 			local Phys = ent:GetPhysicsObject()
 			if(Phys:IsValid())then
-				Phys:EnableMotion(true)
+				Phys:EnableMotion(false)
 			end
+			ent:SetMoveType( MOVETYPE_NONE )
 		end
 		
 		--Make the constraints
@@ -143,10 +144,6 @@ if(SERVER)then
 		
 		--Intialize all the entitys at the same time.
 		for _, ent in pairs( E ) do
-			local Phys = ent:GetPhysicsObject()
-			if(Phys:IsValid())then
-				Phys:EnableMotion(Freeze or false)
-			end
 			if(ent.EntityMods)then
 				ent:PostEntityPaste(Owner,ent,E)
 			end

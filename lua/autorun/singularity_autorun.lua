@@ -20,22 +20,24 @@ local LoadFile = Singularity.LoadFile --Lel Speed.
 --Shared
 LoadFile(CoreF.."sh_utility.lua",1)
 LoadFile(CoreF.."sh_entitypersistance.lua",1)
-LoadFile(CoreF.."sh_subspacecore.lua",1)
-LoadFile(DataF.."init.lua",1)
-LoadFile(MainF.."init.lua",1)
-LoadFile(CoreF.."sh_emptylua.lua",1)
 
---Client
-LoadFile(CoreF.."sv_propprotect.lua",1)
+ if game.GetMap() == "lde_space_v1" then
+	LoadFile(CoreF.."sh_subspacecore.lua",1)
+	LoadFile(DataF.."init.lua",1)
+	LoadFile(MainF.."init.lua",1)
+	LoadFile(CoreF.."sh_emptylua.lua",1)
 
-if CLIENT then
-	language.Add( "worldspawn", "World" )
-	language.Add( "trigger_hurt", "Environment" )
-else
-	hook.Add("GetGameDescription", "GameDesc", function() 
-		return "Singularity"
-	end)
+	--Client
+	LoadFile(CoreF.."sv_propprotect.lua",1)
+
+	if CLIENT then
+		language.Add( "worldspawn", "World" )
+		language.Add( "trigger_hurt", "Environment" )
+	else
+		hook.Add("GetGameDescription", "GameDesc", function() 
+			return "Singularity"
+		end)
+	end
 end
-SinglePlayer = game.SinglePlayer
 
 print("Singularity AutoRun Finished! Took "..(SysTime()-StartTime).."'s to load.")

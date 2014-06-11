@@ -11,8 +11,8 @@ if ( CLIENT ) then
 end 
 
 function TOOL:LeftClick( tr )
-	if ( not tr.Entity:IsValid() ) then return false end
-	if ( CLIENT ) then return true end
+	if not tr.Entity:IsValid() then return false end
+	if CLIENT then return true end
 	
 	local Data = Singularity.Persistance:GetShipData(tr.Entity) 
 	--Singularity.Persistance:LoadFromData(Vector(0,0,0),Data,true,self:GetOwner())

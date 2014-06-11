@@ -212,6 +212,7 @@ if(SERVER)then
 	]]	
 	function NDat.AddData(Data,ply)
 		local T=NDat.Data[ply:Nick()]
+		if not T then return end
 		table.insert(T.Data,Data)
 	end
 	
