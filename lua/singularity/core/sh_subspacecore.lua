@@ -20,16 +20,18 @@ SubSpaces.MainSpace = "MainSpace"
 
 --Gets the position of the subspace.
 function SubSpaces.SubSpacePos(subspace)
-	if SubSpaces.SubSpaces[subspace] then
-		return SubSpaces.SubSpaces[subspace].Pos or Vector(0,0,0)
+	local Table = SubSpaces.GetSubSpaceEntity(subspace)
+	if IsValid(Table) then
+		return Table:GetSubPos() or Vector(0,0,0)
 	end
 	return Vector(0,0,0)
 end
 
 --Gets the angle of the subspace.
 function SubSpaces.SubSpaceAng(subspace)
-	if SubSpaces.SubSpaces[subspace] then
-		return SubSpaces.SubSpaces[subspace].Ang or Angle(0,0,0)
+	local Table = SubSpaces.GetSubSpaceEntity(subspace)
+	if IsValid(Table) then
+		return Table:GetSubAng() or Angle(0,0,0)
 	end
 	return Angle(0,0,0)
 end
@@ -37,20 +39,42 @@ end
 --Returns the table of a subspace.
 function SubSpaces.SubSpaceTab(subspace) return SubSpaces.SubSpaces[subspace] or {} end
 
---Add basic physics to the movement.
-Utl:SetupThinkHook("SubSpaceMovement",0.01,0,function() 
-	local Mult = 67
-	if not SERVER then Mult=1/FrameTime() end
-	for id, subspace in pairs( SubSpaces.SubSpaces ) do
-		subspace.Pos = subspace.Pos+(subspace.VVel/Mult) --Move the subspace based on its velocity.
-		subspace.Ang = subspace.Ang+(Angle(subspace.AVel.p/Mult,subspace.AVel.y/Mult,subspace.AVel.r/Mult)) --Rotate it now.
-	end			
-end)
+function SubSpaces.GetSubSpaceEntity(subspace)
+	local Table = SubSpaces.SubSpaceTab(subspace)
+	if not Table then return end
+	if SERVER then
+		if not Table.Anchor or  Table.Anchor and not IsValid(Entity(Table.Anchor)) then
+			local A = ents.Create("sing_anchor")
+			A:Spawn()
+			Table.Anchor = A:EntIndex()
+			SubSpaces:UpdateSubSpace(Table)
+		end
+	end
+	if not Table.Anchor then return end
+	--Table.Anchor:SetAngles(Table.Ang)
+	return Entity(Table.Anchor)
+end
 	
 if(SERVER)then
 	AddCSLuaFile( "vgui/layerlist.lua" )
 	AddCSLuaFile( "vgui/layerlist_layer.lua" )
-	
+		
+	--Add basic physics to the movement.
+	Utl:SetupThinkHook("SubSpaceMovement",0.01,0,function() 
+		local Mult = 67
+		if not SERVER then Mult=1/FrameTime() end
+		for id, subspace in pairs( SubSpaces.SubSpaces ) do
+			subspace.Pos = subspace.Pos+(subspace.VVel/Mult) --Move the subspace based on its velocity.
+			subspace.Ang = subspace.Ang+(Angle(subspace.AVel.p/Mult,subspace.AVel.y/Mult,subspace.AVel.r/Mult)) --Rotate it now.
+			
+			local Anc = SubSpaces.GetSubSpaceEntity(id)
+			if IsValid(Anc) then
+				Anc:SetSubPos(subspace.Pos)
+				Anc:SetSubAng(subspace.Ang)			
+			end
+		end			
+	end)
+
 	--[[------------------------------------------------------------------------------------------------------------------
 		SubSpace management
 	------------------------------------------------------------------------------------------------------------------]]--
@@ -58,7 +82,7 @@ if(SERVER)then
 		if(not SubSpaces.SubSpaces[Name])then
 			print("Generating "..Name.." subspace")
 			local SubSpace = {}
-
+			
 			SubSpace = {ID=Name, Owner = "World", Title = Name , Pos = Vect, VVel = Vector(), AVel=Angle(), Ang = Ang, Entitys={}, Importance = Type}
 			SubSpaces.SubSpaces[Name]=SubSpace
 			SubSpaces.SubSpaceKeys[tostring(Vect)]=SubSpaces.SubSpaces[Name] --Vector to subspace key link.
@@ -81,12 +105,12 @@ if(SERVER)then
 	end
 	
 	--Set Position and angle functions.
-	function SubSpaces:SSSetPos(Name,Vect) local SubSpace = SubSpaces.SubSpaces[Name] SubSpace.Pos=Vect or SubSpace.Pos SubSpaces:UpdateSubSpace(SubSpace) end
-	function SubSpaces:SSSetAng(Name,Ang) local SubSpace = SubSpaces.SubSpaces[Name] SubSpace.Ang=Ang or SubSpace.Ang SubSpaces:UpdateSubSpace(SubSpace) end	
+	function SubSpaces:SSSetPos(Name,Vect) local SubSpace = SubSpaces.SubSpaces[Name] SubSpace.Pos=Vect or SubSpace.Pos end
+	function SubSpaces:SSSetAng(Name,Ang) local SubSpace = SubSpaces.SubSpaces[Name] SubSpace.Ang=Ang or SubSpace.Ang end	
 	
 	--Set Velocity functions.
-	function SubSpaces:SSSetVVel(Name,Vect) local SubSpace = SubSpaces.SubSpaces[Name] SubSpace.VVel=Vect or SubSpace.VVel SubSpaces:UpdateSubSpace(SubSpace) end
-	function SubSpaces:SSSetAVel(Name,Ang) local SubSpace = SubSpaces.SubSpaces[Name] SubSpace.AVel=Ang or SubSpace.AVel SubSpaces:UpdateSubSpace(SubSpace) end	
+	function SubSpaces:SSSetVVel(Name,Vect) local SubSpace = SubSpaces.SubSpaces[Name] SubSpace.VVel=Vect or SubSpace.VVel end
+	function SubSpaces:SSSetAVel(Name,Ang) local SubSpace = SubSpaces.SubSpaces[Name] SubSpace.AVel=Ang or SubSpace.AVel end	
 		
 	function SubSpaces:DestroyLayerByKey( Key,Protect )
 		local STable = SubSpaces.SubSpaces[Key]
@@ -127,16 +151,6 @@ if(SERVER)then
 			ply.SelectedLayer = args[1] 
 		end
 	end )
-else	
-	function SubSpaces.GetSubSpaceEntity(subspace)
-		local Table = SubSpaces.SubSpaceTab(subspace)
-		if not Table then return end
-		if not IsValid(Table.Anchor) then
-			Table.Anchor = ents.CreateClientProp()
-		end
-		--Table.Anchor:SetAngles(Table.Ang)
-		return Table.Anchor
-	end
 end
 
 LoadFile("singularity/core/subspace/cl_rendering.lua",0)

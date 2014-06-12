@@ -11,9 +11,8 @@ if(SERVER)then
 		local Data = {Name="subspace_create",Val=1,Dat={
 			{N="N",T="S",V=Name},
 			{N="T",T="S",V=SubSpace.Title},
-			{N="O",T="S",V=SubSpace.Owner},
-			{N="V",T="V",V=SubSpace.Pos},
-			{N="A",T="A",V=SubSpace.Ang}
+			{N="O",T="S",V=SubSpace.Owner}
+			--{N="E",T="F",V=SubSpace.Anchor},
 		}}
 		
 		NDat.AddDataAll(Data)
@@ -23,12 +22,8 @@ if(SERVER)then
 		--print("syncing "..Name.." subspace")
 		local Data = {Name="subspaces_update",Val=1,Dat={
 			{N="T",T="S",V=SubSpace.Title},
-			{N="V",T="V",V=SubSpace.Pos},
-			{N="A",T="A",V=SubSpace.Ang},
-			{N="VV",T="V",V=SubSpace.VVel},
-			{N="AV",T="A",V=SubSpace.AVel}			
+			{N="E",T="F",V=SubSpace.Anchor}
 		}}
-		
 		NDat.AddDataAll(Data)
 	end	
 	
@@ -42,24 +37,27 @@ if(SERVER)then
 	
 	function SubSpaces:UpdateLayers()
 		for id, subspace in pairs( SubSpaces.SubSpaces ) do
-			SubSpaces:UpdateSubSpace(subspace)
+			if IsValid(SubSpaces.GetSubSpaceEntity(id)) then
+				SubSpaces:UpdateSubSpace(subspace)
+			end
 		end	
 	end
-	Utl:SetupThinkHook("SubSpaceUpdate",0.1,0,SubSpaces.UpdateLayers)
+	Utl:SetupThinkHook("SubSpaceUpdate",1,0,SubSpaces.UpdateLayers)
 else
 	Utl:HookNet("subspace_create","",function(D)
-		local id, title, owner, pos, ang = D.N, D.T, D.O, D.V, D.A
+		local id, title, owner = D.N, D.T, D.O
 		if SubSpaces.layerList then		
 			if not SubSpaces.SubSpaces[id] then
-				SubSpaces.layerList:AddLayer( id, title, owner, pos )
+				SubSpaces.layerList:AddLayer( id, title, owner, Vector(0,0,0) )
 			end
 		end
-		SubSpaces.SubSpaces[id]={Owner=owner,Title=Title,Pos=pos,Ang=ang,VVel=Vector(),AVel=Angle()}
+		SubSpaces.SubSpaces[id]={Owner=owner,Title=Title,Anchor=anc}
 	end)
 	
 	Utl:HookNet("subspaces_update","",function(D)
 		local SS = SubSpaces.SubSpaces[D.T] if not SS then return end
-		SS.Pos=D.V SS.Ang=D.A SS.AVel = D.AV SS.VVel = D.VV
+		print("N: "..tostring(D.E).." E: "..tostring(Entity(D.E)))
+		SS.Anchor=D.E
 	end)
 
 	net.Receive( "subspaces_clearall", function( length, client )
