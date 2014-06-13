@@ -58,23 +58,7 @@ end
 if(SERVER)then
 	AddCSLuaFile( "vgui/layerlist.lua" )
 	AddCSLuaFile( "vgui/layerlist_layer.lua" )
-		
-	--Add basic physics to the movement.
-	Utl:SetupThinkHook("SubSpaceMovement",0.01,0,function() 
-		local Mult = 67
-		if not SERVER then Mult=1/FrameTime() end
-		for id, subspace in pairs( SubSpaces.SubSpaces ) do
-			subspace.Pos = subspace.Pos+(subspace.VVel/Mult) --Move the subspace based on its velocity.
-			subspace.Ang = subspace.Ang+(Angle(subspace.AVel.p/Mult,subspace.AVel.y/Mult,subspace.AVel.r/Mult)) --Rotate it now.
-			
-			local Anc = SubSpaces.GetSubSpaceEntity(id)
-			if IsValid(Anc) then
-				Anc:SetSubPos(subspace.Pos)
-				Anc:SetSubAng(subspace.Ang)			
-			end
-		end			
-	end)
-
+	
 	--[[------------------------------------------------------------------------------------------------------------------
 		SubSpace management
 	------------------------------------------------------------------------------------------------------------------]]--
@@ -83,7 +67,7 @@ if(SERVER)then
 			print("Generating "..Name.." subspace")
 			local SubSpace = {}
 			
-			SubSpace = {ID=Name, Owner = "World", Title = Name , Pos = Vect, VVel = Vector(), AVel=Angle(), Ang = Ang, Entitys={}, Importance = Type}
+			SubSpace = {ID=Name, Owner = "World", Title = Name , Pos = Vect, VVel = Vector(), AVel=Angle(), Ang = Ang, Entitys={}, Importance = Type, Bubble={}, Size = 0}
 			SubSpaces.SubSpaces[Name]=SubSpace
 			SubSpaces.SubSpaceKeys[tostring(Vect)]=SubSpaces.SubSpaces[Name] --Vector to subspace key link.
 			
@@ -151,6 +135,68 @@ if(SERVER)then
 			ply.SelectedLayer = args[1] 
 		end
 	end )
+	
+	-----------------------------------------------------------------------
+	/*						SubSpace Functions							 */
+	-----------------------------------------------------------------------
+	
+	function SubSpaces:Compile(subspace) --If this becomes laggy on large ships, slow it down.
+		local Table = SubSpaces.SubSpaceTab(subspace)
+		if not Table then return end
+		local Dist,Rad = 0,0
+		for ID, ent in pairs( Table.Entitys ) do
+			if IsValid(ent) then
+				local D,R = ent:GetPos():DistToSqr( Vector() ), ent:BoundingRadius()
+				if D+R > Dist+Rad then
+					Dist,Rad = D,R
+				end
+			end
+		end
+		Table.Size = math.sqrt(Dist)+Rad
+	end
+	
+	-----------------------------------------------------------------------
+	/*						SubSpace Movement							 */
+	-----------------------------------------------------------------------
+	local PhysMult = 67
+	
+	function SubSpaces:BubbleLoop(subspace)
+		local Bub,CT = subspace.Bubble,CurTime()
+		for ID, sub in pairs( SubSpaces.SubSpaces ) do
+			if sub ~= subspace and (Bub[sub.ID] or 0)<=CT then
+				--local Dist = subspace.Pos:DistToSqr( sub.Pos )
+				local mpos,spos = subspace.Pos,sub.Pos
+				local Dist,S1,S2 = mpos:Distance(spos),subspace.Size,sub.Size
+				--print("Dist: "..Dist.." R: "..S1+S2)				
+				if Dist<S1+S2 then
+					print("Too Close!")
+					local Dir = spos-mpos
+					Dir:Normalize()
+					if S1 > S2 then
+						SubSpaces:SSSetPos(ID,(Dir*(S1+S2))*1.01)
+					else
+						return (Dir*(S1+S2))*1.01
+					end
+					return mpos
+				else
+					--Farther away the longer we can wait to check distance for collisions.
+					--Bub[sub.ID]=CT+
+				end
+			end
+		end
+	end
+	
+	Utl:SetupThinkHook("SubSpaceMovement",0.01,0,function() 
+		for id, subspace in pairs( SubSpaces.SubSpaces ) do
+			local Pos,Ang = subspace.Pos+(subspace.VVel/PhysMult),subspace.Ang+(Angle(subspace.AVel.p/PhysMult,subspace.AVel.y/PhysMult,subspace.AVel.r/PhysMult))
+			
+			Pos = SubSpaces:BubbleLoop(subspace) or Pos
+			
+			subspace.Pos,subspace.Ang = Pos,Ang
+			local Anc = SubSpaces.GetSubSpaceEntity(id)
+			if IsValid(Anc) then Anc:SetSubPos(Pos) Anc:SetSubAng(Ang) end
+		end			
+	end)
 end
 
 LoadFile("singularity/core/subspace/cl_rendering.lua",0)
@@ -164,5 +210,4 @@ LoadFile("singularity/core/subspace/sh_overrides.lua",1)
 if SERVER then
 	SubSpaces:WorldGenLayer(SubSpaces.MainSpace,Vector(),Angle(),true)
 	SubSpaces:WorldGenLayer("NullSpace",Vector(),Angle(),true)
-	SubSpaces:SSSetAVel(SubSpaces.MainSpace,Angle(0,5,0))
 end

@@ -56,7 +56,6 @@ else
 	
 	Utl:HookNet("subspaces_update","",function(D)
 		local SS = SubSpaces.SubSpaces[D.T] if not SS then return end
-		print("N: "..tostring(D.E).." E: "..tostring(Entity(D.E)))
 		SS.Anchor=D.E
 	end)
 
