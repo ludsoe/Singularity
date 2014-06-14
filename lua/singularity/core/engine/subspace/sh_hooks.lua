@@ -25,7 +25,7 @@ if(SERVER)then
 	function SubSpaces.InitializePlayerLayer( ply ) 
 		ply:SetSubSpace(SubSpaces.MainSpace) 
 		ply:SetCustomCollisionCheck() 
-		SubSpaces:UpdateLayers()
+		Utl:SetupThinkHook("SubSpaceSync:"..ply:Nick(),5,1,SubSpaces.SyncLayers)		
 	end	
 	
 	function SubSpaces.HandlePlayerSpawn(ply)

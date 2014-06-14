@@ -19,12 +19,14 @@ function ENT:Initialize()
 	--self:SetSolid( SOLID_NONE )
 	self:DrawShadow(false)
 	
-	self:SetNotSolid( true )
+	--self:SetNotSolid( true )
 end
 
+--[[
 function ENT:CanTool()
 	return false
 end
+ ]]
  
 function ENT:GravGunPunt()
 	return false

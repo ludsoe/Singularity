@@ -43,10 +43,16 @@ function SubSpaces:SetEntityVisiblity( ent, subspace )
 end
 
 function SubSpaces.RenderEntities()
-	local localLayer = LocalPlayer():GetViewSubSpace()
-	
+	local localLayer = LocalPlayer():GetViewSubSpace()	
 	for _, ent in ipairs( ents.GetAll() ) do
 		SubSpaces:SetEntityVisiblity( ent, localLayer )			
 	end
+	--util.Effect( "starmeshent", EffectData() )
 end
 hook.Add( "RenderScene", "SingularityEntityDrawing", SubSpaces.RenderEntities )
+
+
+
+
+
+

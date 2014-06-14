@@ -1,16 +1,18 @@
 function EFFECT:Init(data)
 	
+	local Invisible = function(self) self:SetColor(Color(0,0,0,0)) end
+	
 	local ent = data:GetEntity()
-	if(not ent or not ent:IsValid())then return end
+	if(not ent or not ent:IsValid())then Invisible(self) return end
 	
 	local Mod,Pos,Type,Ang = ent:GetModel(),ent:GetPos(),ent:GetClass(),ent:GetAngles()
-	if(not Mod or Mod=="")then return end
+	if(not Mod or Mod=="")then Invisible(self) return end
 	
 	local SubPos = ent:GetUniPos()-LocalPlayer():GetUniPos()
 	
 	local SubAng,PlyAng = ent:GetUniAng(),LocalPlayer():GetUniAng() //ent:GetUniAng() Returns ent subspace angle
 	local Anchor = SubSpaces.GetSubSpaceEntity(ent:GetSubSpace())
-	if not IsValid(Anchor) then return end
+	if not IsValid(Anchor) then Invisible(self) return end
 	
 	Anchor:SetAngles(SubAng-PlyAng)
 	
@@ -28,14 +30,11 @@ function EFFECT:Init(data)
 	mat:Scale(Vector(Scale,Scale,Scale))
 	self:EnableMatrix("RenderMultiply", mat)
 	
-	--Pos:Rotate(SubAng-PlyAng)
 	Pos=Anchor:LocalToWorld(Pos)
-		
+	
 	SubPos:Rotate(PlyAng)
 	local Spot = (Pos+SubPos)/SubSpaces.Scale
-	
-	--print(tostring(Spot))
-	
+		
 	self:SetPos(SubSpaces.SkyBox+Spot)
 end
 

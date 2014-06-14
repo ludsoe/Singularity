@@ -16,26 +16,24 @@ if(SERVER)then
 		Data.M=Ent:GetModel()
 		
 		local Class = Ent:GetClass()
-		if(Class~="prop_physics")then Data.T = Class end
+		if Class~="prop_physics" then Data.T = Class end
 		
 		Data.V=C:WorldToLocal(Ent:GetPos())
 		Data.A=C:WorldToLocalAngles(Ent:GetAngles())
 		
 		local Skin = Ent:GetSkin()
-		if(Skin~=1)then Data.S=Skin end
+		if Skin~=1 then Data.S=Skin end
 		
 		local Col = Ent:GetColor()
-		if(Col~=Color(255,255,255,255))then Data.C=Col end
+		if Col~=Color(255,255,255,255) then Data.C=Col end
 		
 		local Par = Ent:GetParent()
-		if(Par:IsValid())then Data.P=Par:EntIndex() end
+		if Par:IsValid() then Data.P=Par:EntIndex() end
 		
 		--Get entity persistant data.
-		if(Ent.GetPersData)then
-			Data.E=Ent:GetPersData()
-		end
+		if Ent.GetPersData then Data.E=Ent:GetPersData() end
 		
-		if(Ent.PreEntityCopy)then
+		if Ent.PreEntityCopy then
 			Ent:PreEntityCopy()
 			Data.W=Ent.EntityMods
 			PrintTable(Data.W)
@@ -47,7 +45,7 @@ if(SERVER)then
 	--Gets the extra data from a constraint
 	function Pers:GetConsExtra(T,c)
 		local E={}
-		if(T=="Rope")then E={w=c.width,l=c.length,m=c.material,P1=c.LPos1,P2=c.LPos2} end
+		if T=="Rope" then E={w=c.width,l=c.length,m=c.material,P1=c.LPos1,P2=c.LPos2} end
 		return E
 	end
 	
@@ -108,45 +106,34 @@ if(SERVER)then
 			ent:SetSubSpace(SubSpace)
 			ent.UnTouchable = true
 			
-			if(PD.P and PD.P~=0)then
+			if PD.P and PD.P~=0 then
 				L[ID]=function()
 					ent:SetParent(E[PD.P])
 				end
 			end
 			
 			--Get entity persistant data.
-			if(ent.SetPersData)then
-				ent:SetPersData(PD.E)
-			end		
-			
-			if(PD.W)then
-				ent.EntityMods=PD.W
-			end
+			if ent.SetPersData then ent:SetPersData(PD.E) end		
+			if PD.W then ent.EntityMods=PD.W end
 			
 			ent:Spawn()
 			
 			local Phys = ent:GetPhysicsObject()
-			if(Phys:IsValid())then
+			if Phys:IsValid() then
 				Phys:EnableMotion(false)
 			end
 			ent:SetMoveType( MOVETYPE_NONE )
 		end
 		
 		--Make the constraints
-		for _, w in pairs( W ) do
-			Pers:LoadConstraint(w,E)
-		end
+		for _, w in pairs( W ) do Pers:LoadConstraint(w,E) end
 		
 		--Run any entity predupefinish functions
-		for _, f in pairs( L ) do
-			f()
-		end
+		for _, f in pairs( L ) do f() end
 		
 		--Intialize all the entitys at the same time.
 		for _, ent in pairs( E ) do
-			if(ent.EntityMods)then
-				ent:PostEntityPaste(Owner,ent,E)
-			end
+			if ent.EntityMods then ent:PostEntityPaste(Owner,ent,E) end
 		end
 		
 		return E --Return the completed ship.

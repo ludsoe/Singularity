@@ -146,13 +146,14 @@ if(SERVER)then
 		local Dist,Rad = 0,0
 		for ID, ent in pairs( Table.Entitys ) do
 			if IsValid(ent) then
-				local D,R = ent:GetPos():DistToSqr( Vector() ), ent:BoundingRadius()
+				local D,R = ent:GetPos():Distance( Vector() ), ent:BoundingRadius()
 				if D+R > Dist+Rad then
 					Dist,Rad = D,R
 				end
 			end
 		end
-		Table.Size = math.sqrt(Dist)+Rad
+		Table.Size = Dist+Rad
+		print("SubSpace Size: "..Table.Size)
 	end
 	
 	-----------------------------------------------------------------------
@@ -166,21 +167,24 @@ if(SERVER)then
 			if sub ~= subspace and (Bub[sub.ID] or 0)<=CT then
 				--local Dist = subspace.Pos:DistToSqr( sub.Pos )
 				local mpos,spos = subspace.Pos,sub.Pos
+				local Match = (mpos == spos)
 				local Dist,S1,S2 = mpos:Distance(spos),subspace.Size,sub.Size
 				--print("Dist: "..Dist.." R: "..S1+S2)				
-				if Dist<S1+S2 then
-					print("Too Close!")
+				if  not Match and Dist<S1+S2 then
+					--print("Too Close!")
 					local Dir = spos-mpos
 					Dir:Normalize()
 					if S1 > S2 then
-						SubSpaces:SSSetPos(ID,(Dir*(S1+S2))*1.01)
+						SubSpaces:SSSetPos(ID,(Dir*(S1+S2))+Dir)
 					else
-						return (Dir*(S1+S2))*1.01
+						return (Dir*(S1+S2))+Dir
 					end
 					return mpos
 				else
 					--Farther away the longer we can wait to check distance for collisions.
-					--Bub[sub.ID]=CT+
+					if Match then
+						Bub[sub.ID]=CT+10
+					end
 				end
 			end
 		end
@@ -199,13 +203,13 @@ if(SERVER)then
 	end)
 end
 
-LoadFile("singularity/core/subspace/cl_rendering.lua",0)
+LoadFile("singularity/core/engine/subspace/cl_rendering.lua",0)
 
-LoadFile("singularity/core/subspace/sh_entity.lua",1)
-LoadFile("singularity/core/subspace/sh_hooks.lua",1)
-LoadFile("singularity/core/subspace/sh_mapsize.lua",1)
-LoadFile("singularity/core/subspace/sh_netmsgs.lua",1)
-LoadFile("singularity/core/subspace/sh_overrides.lua",1)
+LoadFile("singularity/core/engine/subspace/sh_entity.lua",1)
+LoadFile("singularity/core/engine/subspace/sh_hooks.lua",1)
+LoadFile("singularity/core/engine/subspace/sh_mapsize.lua",1)
+LoadFile("singularity/core/engine/subspace/sh_netmsgs.lua",1)
+LoadFile("singularity/core/engine/subspace/sh_overrides.lua",1)
 
 if SERVER then
 	SubSpaces:WorldGenLayer(SubSpaces.MainSpace,Vector(),Angle(),true)
