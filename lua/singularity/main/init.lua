@@ -17,6 +17,10 @@ if SERVER then
 	Utl:SetupThinkHook("SpawnStation",0,1,function() --Because running it first things first caused crashs.
 		Pers:LoadFromData(Vector(0,0,0),PB["spawnstation"],false,SubSpaces.MainSpace) 
 		SubSpaces:Compile(SubSpaces.MainSpace) --Compile the spawn station.
+		
+		if not IsValid(Singularity.StarField) then
+			Singularity.StarField = ents.Create("sing_stars"):Spawn()
+		end
 	end)
 	
 	SubSpaces:SSSetAVel(SubSpaces.MainSpace,Angle(0,5,0))

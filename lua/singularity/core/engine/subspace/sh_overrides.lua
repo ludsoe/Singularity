@@ -79,7 +79,6 @@ if(SERVER)then
 		return SubSpaces.OriginalAddCount( self, type, ent )
 	end
 	
-	
 	if not SubSpaces.OriginalCleanup then SubSpaces.OriginalCleanup = cleanup.Add end
 	function cleanup.Add( ply, type, ent )
 		if ( ent ) then ent:SetSubSpace( ply:GetSubSpace() ) end
@@ -92,5 +91,4 @@ else
 		
 		SubSpaces.oldEmitSound( self, filename, soundlevel, pitchpercent )
 	end
-	
 end		 

@@ -15,6 +15,8 @@ function Singularity.MT.CreateDevice(ply, trace, Class, Model, Ang)
 	
 	Singularity.GivePlyProp(ply,ent)
 	
+	ent:SetSubSpace( ply:GetSubSpace() ) --Set it to the subpace the player spawning it is in.
+	
 	ply:AddCleanup("Jupiter Device",ent)
 
 	undo.Create("Entity: "..Class)

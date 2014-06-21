@@ -21,7 +21,8 @@ Debugging Functions.
 
 --The Debug function, allows us to easily enable/disable debugging.
 function Utl:Debug(Source,String,Type)
-	print("["..Type.."]: "..Source..": "..String)
+	Singularity.Debug(String,2,"["..Type.."]"..Source)--Redirect this to use the debug.lua debug functions.
+	--print("["..Type.."]: "..Source..": "..String)
 end
 
 --[[----------------------------------------------------
@@ -173,13 +174,16 @@ if(SERVER)then
 	
 	Utl:HookHook("Shutdown","SettingsSave",Utl.SaveSettings,1)
 	
+	
 	--[[----------------------------------------------------
 	Serverside Networking Handling.
 	----------------------------------------------------]]--
+	function NumBool = function(V) if V then return 1 else return 0 end end --Bool to number.
+
 	util.AddNetworkString( "sing_basenetmessage" )
 	local NDat = Utl.NetMan --Ease link to the netdata table.
 	NDat.Data = NDat.Data or {} -- The actual table we store data in.
-	NDat.NetDataTypes = {S=net.WriteString,E=net.WriteEntity,F=net.WriteFloat,V=net.WriteVector,A=net.WriteAngle}
+	NDat.NetDataTypes = {S=net.WriteString,E=net.WriteEntity,F=net.WriteFloat,V=net.WriteVector,A=net.WriteAngle,B=function(V) net.WriteFloat(NumBool(V)) end}
 	
 	--Loops the players and prepares to send their data.
 	function NDat.CyclePlayers()
@@ -225,7 +229,7 @@ if(SERVER)then
 		NDat.Data[ply:Nick()]={Data={},Ent=ply}
 	end
 	
-	Utl:SetupThinkHook("SyncNetData",0.5,0,NDat.CyclePlayers)
+	Utl:SetupThinkHook("SyncNetData",0.2,0,NDat.CyclePlayers)
 	
 	Utl:HookHook("PlayerInitialSpawn","NetDatHook",NDat.AddPlay,1)
 
@@ -290,7 +294,7 @@ else
 	----------------------------------------------------]]--	
 	local NDat = Utl.NetMan --Ease link to the netdata table.
 	NDat.Data = {} 
-	NDat.NetDataTypes = {S=net.ReadString,E=net.ReadEntity,F=net.ReadFloat,V=net.ReadVector,A=net.ReadAngle}
+	NDat.NetDataTypes = {S=net.ReadString,E=net.ReadEntity,F=net.ReadFloat,V=net.ReadVector,A=net.ReadAngle,B=function() return net.ReadFloat()>0 end}
 	
 	function Utl:HookNet(MSG,ID,Func)
 		NDat.Data[MSG] = Func

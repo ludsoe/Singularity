@@ -27,6 +27,15 @@ if(SERVER)then
 		NDat.AddDataAll(Data)
 	end	
 	
+	function SubSpaces:UpdateSubSpaceRendering(SubSpace,Render)
+		local SS = SubSpaces.SubSpaces[SubSpace] if not SS then return end SS.DryDock = (Render > 0)
+		local Data = {Name="subspaces_changerender",Val=1,Dat={
+			{N="T",T="S",V=SubSpace.Title},
+			{N="R",T="B",V=Render}
+		}}
+		NDat.AddDataAll(Data)
+	end	
+	
 	function SubSpaces:SyncLayers()
 		net.Start( "subspaces_clearall" )
 		net.Broadcast()
@@ -57,6 +66,11 @@ else
 	Utl:HookNet("subspaces_update","",function(D)
 		local SS = SubSpaces.SubSpaces[D.T] if not SS then return end
 		SS.Anchor=D.E
+	end)
+	
+	Utl:HookNet("subspaces_changerender","",function(D)
+		local SS = SubSpaces.SubSpaces[D.T] if not SS then return end
+		SS.DryDock=D.R
 	end)
 
 	net.Receive( "subspaces_clearall", function( length, client )

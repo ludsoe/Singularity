@@ -28,6 +28,7 @@ local function MakePage(Base,Page,Tab)
 	local Spawns = Singularity.ShipMods.Modules[Page] or {}
 	
 	local OnSelect = function(Data)
+		if not Spawns[Data] then return end
 		local Table=Spawns[Data].M
 		Tab[Page].Models:SetModel(Table.M)
 		Tab[Page].Name:SetText(Table.N)

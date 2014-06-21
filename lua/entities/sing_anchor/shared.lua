@@ -7,6 +7,8 @@ ENT.Category		= "Other"
 ENT.Spawnable		= true
 ENT.AdminSpawnable	= true
 
+ENT.IsCore = true
+ENT.IsDead = false
 
 function ENT:SetupDataTables()
 
