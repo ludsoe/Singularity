@@ -27,12 +27,12 @@ function Singularity.ShipMods.RegisterReactor(New,Data)
 	Data.Info["Reactor Capacity"] = New.Cap
 	
 	Data.Name = New.Name or "Reactor"
-	Data.Model = New.Model
+	Data.MyModel = New.MyModel
 	
 	Singularity.ShipMods.MakeModule(table.Copy(Data))
 end
 
-local RCT = {Name="Generic Reactor",Cap=1500,Model="models/props_wasteland/laundry_washer003.mdl"}
+local RCT = {Name="Generic Reactor",Cap=1500,MyModel="models/props_wasteland/laundry_washer003.mdl"}
 Singularity.ShipMods.RegisterReactor(RCT,Data)
 
 

@@ -178,7 +178,7 @@ if(SERVER)then
 	--[[----------------------------------------------------
 	Serverside Networking Handling.
 	----------------------------------------------------]]--
-	function NumBool = function(V) if V then return 1 else return 0 end end --Bool to number.
+	local NumBool = function(V) if V then return 1 else return 0 end end --Bool to number.
 
 	util.AddNetworkString( "sing_basenetmessage" )
 	local NDat = Utl.NetMan --Ease link to the netdata table.

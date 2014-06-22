@@ -1,11 +1,12 @@
 local Singularity = Singularity
 local SubSpaces = SubSpaces
+local Utl = Singularity.Utl --Makes it easier to read the code.
 
 local Data = {
 	Name="Ship Console",
 	Type="Generic",
 	Class="sing_smod",
-	Model="models\sbep_community\d12console.mdl",
+	MyModel="models/sbep_community/d12console.mdl",
 	Wire = {},
 	Extra = {},
 	Admin = true

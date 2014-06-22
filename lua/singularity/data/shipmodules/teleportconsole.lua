@@ -2,7 +2,7 @@ local Data = {
 	Name="Teleport Console",
 	Type="Generic",
 	Class="sing_smod",
-	Model="models\sbep_community\d12console.mdl",
+	MyModel="models/sbep_community/d12console.mdl",
 	Wire = {},
 	Extra = {}
 }
