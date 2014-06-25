@@ -28,9 +28,9 @@ if(SERVER)then
 	end	
 	
 	function SubSpaces:UpdateSubSpaceRendering(SubSpace,Render)
-		local SS = SubSpaces.SubSpaces[SubSpace] if not SS then return end SS.DryDock = (Render > 0)
+		local SS = SubSpaces.SubSpaces[SubSpace] if not SS then return end SS.DryDock = Render
 		local Data = {Name="subspaces_changerender",Val=1,Dat={
-			{N="T",T="S",V=SubSpace.Title},
+			{N="T",T="S",V=SS.Title},
 			{N="R",T="B",V=Render}
 		}}
 		NDat.AddDataAll(Data)

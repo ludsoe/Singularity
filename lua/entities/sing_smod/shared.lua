@@ -8,3 +8,11 @@ ENT.IsModule = true
 ENT.InitData = {}
 ENT.ModuleData = {}
 ENT.ClientSide = false
+
+function ENT:GetPriority()
+	local Priority = 1
+	
+	if self.IsReactor then Priority = 1000 end
+	
+	return Priority
+end

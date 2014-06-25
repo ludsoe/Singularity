@@ -17,15 +17,15 @@ end
 hook.Add( "ShouldCollide", "LayerCollide", ShouldEntitiesCollide )
 
 if(SERVER)then
-	function SubSpaces.EntitySpawnLayer( ply, ent ) ent:SetSubSpace( ply:GetSubSpace() ) ent:SetCustomCollisionCheck() end
+	function SubSpaces.EntitySpawnLayer( ply, ent ) ent:SetSubSpace( ply:GetSubSpace() ) ent:SetCustomCollisionCheck() ent:SetMoveType( MOVETYPE_NONE ) end
 	function SubSpaces.EntitySpawnLayerProxy( ply, mdl, ent ) SubSpaces.EntitySpawnLayer( ply, ent ) end
-	function SubSpaces.OnEntityCreated( ent ) ent:SetCustomCollisionCheck() if ent:GetSubSpace()=="" then ent:SetSubSpace(SubSpaces.MainSpace) end end	
+	function SubSpaces.OnEntityCreated( ent ) ent:SetCustomCollisionCheck() ent:SetMoveType( MOVETYPE_NONE ) if ent:GetSubSpace()=="" then ent:SetSubSpace(SubSpaces.MainSpace) end end	
 	function SubSpaces.OnEntityRemove( ent ) SubSpaces.SubSpaces[ent:GetSubSpace()].Entitys[ent:EntIndex()]=nil end
 	
 	function SubSpaces.InitializePlayerLayer( ply ) 
 		ply:SetSubSpace(SubSpaces.MainSpace) 
 		ply:SetCustomCollisionCheck() 
-		Utl:SetupThinkHook("SubSpaceSync:"..ply:Nick(),5,1,SubSpaces.SyncLayers)		
+		Utl:SetupThinkHook("SubSpaceSync:"..ply:Nick(),5,1,SubSpaces.SyncLayers)
 	end	
 	
 	function SubSpaces.HandlePlayerSpawn(ply)

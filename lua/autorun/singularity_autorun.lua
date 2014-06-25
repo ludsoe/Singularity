@@ -22,6 +22,7 @@ local CoreF,DataF,MainF = "singularity/core/","singularity/data/","singularity/m
 LoadFile("singularity/menusys.lua",1)
 LoadFile("singularity/debug.lua",1)
 LoadFile(CoreF.."sh_utility.lua",1)
+LoadFile(CoreF.."/engine/sh_networking.lua",1)
 LoadFile(CoreF.."sh_constraints.lua",1)
 LoadFile(CoreF.."sh_entitypersistance.lua",1)
 LoadFile(CoreF.."/engine/sh_subspacecore.lua",1)

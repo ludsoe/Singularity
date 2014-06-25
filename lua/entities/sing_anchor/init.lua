@@ -23,13 +23,13 @@ function ENT:Initialize()
 end
  
 function ENT:ShipCoreInit()
-    self.Modules,self.Modifiers,self.PropHealth = {},{},{}
+    self.Modules,self.ModThink = {},{}
 		
-	self.SyncData = {BandWidth=0,MaxBandWidth=0,Hull=1,MaxHull=1,Shields=0,MaxShields=0,Reactor=0,MaxReactor=1}
+	self.SyncData = {}
 	self.OldData = {}
 	
 	local Cur = CurTime()
-    self.Next = {Scan=Cur,Trans=Cur,Shld=Cur} 	
+    self.Next = {Scan=Cur,Trans=Cur} 	
 	
 	self.LastAttacked = 0
 	self.MassCenter = self:WorldToLocal(phy:GetMassCenter())
@@ -38,71 +38,47 @@ end
  
 function ENT:Think()
 	if self.IsDead or not self.Compiled then return end --We DEAD!
-	local SDat,PHeal = self.SyncData,self.PropHealth
 
-    if self.Next.Scan<CurTime() then
-		--self:ScanProps() --Have the core loop its subspace and install any new props/modules.
-        self.Next.Scan = CurTime()+2
-    end
-	
-	/*
-	if self.Next.Shld<CurTime() then
-		if not self.Modifiers.Shields or not IsValid(self.Modifiers.Shields) then
-			SDat.MaxShield = 0
-			if SDat.Shields > 200 then
-				SDat.Shields = SDat.Shields-(SDat.Shields*0.1)
-			else
-				SDat.Shields = 0
-			end
-		end
-		self.Next.Shld = CurTime()+0.1
+	if self.Next.Trans<CurTime() then
+		self:TransmitData()
+		self.Next.Trans = CurTime()+0.2	  
 	end
 	
-	SDat.BandWidth = 0
-	for id, mod in pairs( self.Modules ) do
-		if mod and mod:IsValid() and Singularity.ValidCoreLink(mod) then
+	for id, mod in pairs( self.ModThink ) do
+		if mod and mod:IsValid() then
 			if mod.ModuleThink then
-				local Cost = (mod.ModuleCost or 0)
-				if SDat.BandWidth+Cost<=SDat.MaxBandWidth then
-					SDat.BandWidth = SDat.BandWidth+Cost
-					if (mod.NextModThink or 0) < CurTime() then
-						if mod:ModuleThink(self) then
-							mod.NextModThink = CurTime() + mod.ThinkSpeed
-						end
+				if (mod.NextModThink or 0) < CurTime() then
+					if mod:ModuleThink(self) then
+						mod.NextModThink = CurTime() + mod.ThinkSpeed
 					end
 				end
 			end
 		else
-			self.Modules[id]=nil
+			self.ModThink[id]=nil
 		end
 	end
-	*/
+end
+
+function ENT:ScanModules()
+	local Props = SubSpaces.SubSpaceTab(self:GetSubSpace())
 	
-	if self.Next.Trans<CurTime() then
-		self:TransmitData()
-		self.Next.Trans = CurTime()+0.2	  
-		SDat.Reactor = 0		
+	for n, ent in pairs( Props ) do
+		if ent.IsModule then
+			local ID = ent:EntIndex()
+			if not IsValid(self.Modules[ID]) then
+				self.Modules[ID] = ent
+				table.insert(self.ModThink,{E=ent,I=ID,P=ent:GetPriority()})
+			end
+		end
 	end
-end
-
-function ENT:OnDamage(ent,position,amount,attacker,inflictor)
-	if self.IsDead then return end
-	self.LastAttacked = CurTime()
 	
+	table.sort(self.ModThink, function(a, b) return a.P > b.P end)
 end
 
-function ENT:OnKilled()
-	if self.IsDead then return end self.IsDead = true --Dont kill me more then once >:(
-	
-	--Add death explosion effect, set all props to "dead/deconstructed". --Teleport to drydock?
-	--Send Player to nearest drydock.
-end
-
-util.AddNetworkString('JupiterCoreSync')
 function ENT:TransmitData()
 	local Data = table.Copy(self.SyncData) --Create a copy of the sync data table so we dont mess with the real one.
 	local Transmit = {}
-	
+
 	for n, v in pairs( self.OldData ) do --Update our existing data first.
 		if v.V ~= Data[n] then --If Data doesnt match
 			self.OldData[n] = {V=Data[n],C=true} --Set it to the new value and mark as changed.
@@ -117,12 +93,12 @@ function ENT:TransmitData()
 		self.OldData[n] = {V=v,C=true} --Tell the data its got to be sent.
 		Transmit[n] = v
 	end
-	
-	local Data = util.TableToJSON(Transmit) or ""
-	net.Start('JupiterCoreSync')
-		net.WriteEntity(self)
-		net.WriteString(Data)
-	net.Broadcast()
+		
+	local Data = {Name="SingularityCoreSync",Dat={
+		{N="E",T="E",V=self},
+		{N="T",T="T",V=Transmit}
+	}}
+	NDat.AddDataAll(Data)
 end
 
 function ENT:TransmitAllData(Ply)
@@ -134,11 +110,11 @@ function ENT:TransmitAllData(Ply)
 		Transmit[n] = v.V
 	end
 	
-	local Data = util.TableToJSON(Transmit) or ""
-	net.Start('JupiterCoreSync')
-		net.WriteEntity(self)
-		net.WriteString(Data)
-	net.Send(Ply)
+	local Data = {Name="SingularityCoreSync",Dat={
+		{N="E",T="E",V=self},
+		{N="T",T="T",V=Transmit}
+	}}
+	NDat.AddData(Data,Ply)
 end
 
 function ENT:CanTool()

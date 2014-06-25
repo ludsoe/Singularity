@@ -10,7 +10,6 @@ Utl.ThinkLoop = Utl.ThinkLoop or {} --Create the think loop table.
 Utl.DebugTable = Utl.DebugTable or {} --Create the debug output storage.
 Utl.Hooks = Utl.Hooks or {} --Create the hook table.
 Utl.Effect = Utl.Effect or {} --Create a table to store effect data in.
-Utl.NetMan = Utl.NetMan or {} --Where we store the queued up data to sync.
 
 local DTable = Utl.DebugTable --Localise the debug storage.
 local HTable = Utl.Hooks --Localise the hook table for speed.
@@ -173,65 +172,6 @@ if(SERVER)then
 	end
 	
 	Utl:HookHook("Shutdown","SettingsSave",Utl.SaveSettings,1)
-	
-	
-	--[[----------------------------------------------------
-	Serverside Networking Handling.
-	----------------------------------------------------]]--
-	local NumBool = function(V) if V then return 1 else return 0 end end --Bool to number.
-
-	util.AddNetworkString( "sing_basenetmessage" )
-	local NDat = Utl.NetMan --Ease link to the netdata table.
-	NDat.Data = NDat.Data or {} -- The actual table we store data in.
-	NDat.NetDataTypes = {S=net.WriteString,E=net.WriteEntity,F=net.WriteFloat,V=net.WriteVector,A=net.WriteAngle,B=function(V) net.WriteFloat(NumBool(V)) end}
-	
-	--Loops the players and prepares to send their data.
-	function NDat.CyclePlayers()
-		for nick, pdat in pairs( NDat.Data ) do
-			local Max = 10
-			for id, Data in pairs( pdat.Data ) do
-				if(Max<=0)then break end--We reached the maximum amount of data for this player.
-				Max=Max-Data.Val
-				NDat.SendData(Data,Data.Name,pdat.Ent)
-				table.remove(pdat.Data,id)
-			end
-		end
-	end
-
-	--Actually sends the data out.
-	function NDat.SendData(Data,Name,ply)
-		net.Start("sing_basenetmessage")
-			net.WriteString(Name)
-			net.WriteFloat(table.Count(Data.Dat))
-			for I, S in pairs( Data.Dat ) do --Loop all the variables.
-				net.WriteString(S.N)--Get the variable name.
-				net.WriteString(S.T)
-				NDat.NetDataTypes[S.T](S.V)
-			end
-		net.Send(ply)
-	end
-	
-	--[[
-		Data={Name="example",Val=1,Dat={{N="D",T="S",V="example"}}}
-	]]	
-	function NDat.AddData(Data,ply)
-		local T=NDat.Data[ply:Nick()]
-		if not T then return end
-		table.insert(T.Data,Data)
-	end
-	
-	function NDat.AddDataAll(Data)
-		Utl:LoopValidPlayers(function(ply) NDat.AddData(Data,ply) end)
-	end
-	
-	--Creates the table we will use for each player.
-	function NDat.AddPlay(ply)
-		NDat.Data[ply:Nick()]={Data={},Ent=ply}
-	end
-	
-	Utl:SetupThinkHook("SyncNetData",0.2,0,NDat.CyclePlayers)
-	
-	Utl:HookHook("PlayerInitialSpawn","NetDatHook",NDat.AddPlay,1)
 
 	--[[----------------------------------------------------
 	Serverside Chat Functions.
@@ -288,38 +228,6 @@ else
 		
 		chat.AddText(unpack({col, nam,Color(255,255,255),": "..msg}))
 	end)
-	
-	--[[----------------------------------------------------
-	ClientSide Networking Handling.
-	----------------------------------------------------]]--	
-	local NDat = Utl.NetMan --Ease link to the netdata table.
-	NDat.Data = {} 
-	NDat.NetDataTypes = {S=net.ReadString,E=net.ReadEntity,F=net.ReadFloat,V=net.ReadVector,A=net.ReadAngle,B=function() return net.ReadFloat()>0 end}
-	
-	function Utl:HookNet(MSG,ID,Func)
-		NDat.Data[MSG] = Func
-	end
-	
-	function NDat:InNetF(MSG,Data)
-		if(NDat.Data[MSG])then
-			NDat.Data[MSG](Data)
-		else
-			print("Unhandled message... "..MSG)
-		end
-	end
-	
-	net.Receive( "sing_basenetmessage", function( length )
-		local Name = net.ReadString() --Gets the name of the message.
-		local Count = net.ReadFloat() --Get the amount of variables were recieving.
-		
-		local D = {}
-		for I=1,Count do --Read all the variables.
-			local VN = net.ReadString()
-			local Ty = net.ReadString()
-			D[VN]=NDat.NetDataTypes[Ty]()
-		end
-		NDat:InNetF(Name,D)		
-	end)
 end
 
 --[[----------------------------------------------------
@@ -333,42 +241,4 @@ function Utl:CheckValid( entity )
 	if (not entity:GetPhysicsObject():GetVolume()) then return false end
 	if (not entity:GetPhysicsObject():GetMass()) then return false end
 	return true
-end
-
---[[----------------------------------------------------
-Constraint Functions.
-----------------------------------------------------]]--
-
-function constraint.GetAllWeldedEntities( ent, ResultTable ) --Modded constraint.GetAllConstrainedEntities to find only welded ents
-	local ResultTable = ResultTable or {}
-	if ( !ent ) then return end
-	if ( !ent:IsValid() ) then return end
-	if ( ResultTable[ ent ] ) then return end	
-	ResultTable[ ent ] = ent	
-	local ConTable = constraint.GetTable( ent )	
-	for k, con in ipairs( ConTable ) do	
-		for EntNum, Ent in pairs( con.Entity ) do
-			if (con.Type == "Weld") or (con.Type == "Axis") or (con.Type == "Ballsocket") or (con.Type == "Hydraulic") then
-				constraint.GetAllWeldedEntities( Ent.Entity, ResultTable )
-			end
-		end	
-	end
-	return ResultTable	
-end
-
-function constraint.GetAllConstrainedEntities_B( ent, ResultTable ) --Modded to filter out grabbers
-	local ResultTable = ResultTable or {}
-	if ( !ent ) then return end
-	if ( !ent:IsValid() ) then return end
-	if ( ResultTable[ ent ] ) then return end
-	ResultTable[ ent ] = ent
-	local ConTable = constraint.GetTable( ent )
-	for k, con in ipairs( ConTable ) do
-		for EntNum, Ent in pairs( con.Entity ) do
-			if con.Type != ""  then
-				constraint.GetAllWeldedEntities( Ent.Entity, ResultTable )
-			end
-		end
-	end
-	return ResultTable
 end

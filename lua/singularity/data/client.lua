@@ -12,25 +12,10 @@ function GetWorldTips()
 	local Pos = Trace.HitPos
 	if EyePos():Distance(Pos) < 512 then
 		local TraceEnt = Trace.Entity
-		local txt = "[ "..TraceEnt:GetClass().." ]\n"
-		local Changed = false
-		
 		Singularity.TraceEnt=TraceEnt
 		
-		if TraceEnt.ExtraBubble then
-			for n, ex in pairs( TraceEnt.ExtraBubble ) do
-				txt = txt..n..": "..ex
-				Changed = true
-			end			
-		end
-		
-		if TraceEnt.WorldBubble and not Changed then
-			txt = TraceEnt:WorldBubble(Trace,Pos)
-			Changed = true
-		end
-		
-		if Changed then
-			AddWorldTip(1,txt,1,Pos,NULL)
+		if TraceEnt.WorldBubble then
+			AddWorldTip(1,TraceEnt:WorldBubble(Trace,Pos),1,Pos,NULL)
 		end
 	else
 		Singularity.TraceEnt = nil
