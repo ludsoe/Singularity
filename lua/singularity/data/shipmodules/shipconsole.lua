@@ -1,7 +1,8 @@
 local Singularity = Singularity
 local SubSpaces = SubSpaces
 local LoadFile = Singularity.LoadFile --Lel Speed.
-local NDat = Singularity.Utl.NetMan --Ease link to the netdata table.
+local Utl = Singularity.Utl --Makes it easier to read the code.
+local NDat = Utl.NetMan --Ease link to the netdata table.
 
 local Data = {
 	Name="Ship Console",
@@ -31,7 +32,7 @@ end
 
 function SubSpaces.OpenDryDockSpace(Ply)
 	local X = SubSpaces.MapSize/2
-	local DryDockPos = Vector(X,SubSpaces.MapSize,-X/2)
+	local DryDockPos = Vector(-X,SubSpaces.MapSize,-X/2)
 	local ShipSpace = Ply:Nick()
 	if SubSpaces.SubSpaceTab(ShipSpace).ID then --Do they already have a shipspace?
 		print("Ship Already Exists.")
@@ -48,6 +49,38 @@ function SubSpaces.OpenDryDockSpace(Ply)
 	Ply:SetPos(Vector(0,0,0)) --Should be the center of thier ship.
 	Ply:SetMoveType( MOVETYPE_NOCLIP ) --Ply:SetMoveType( MOVETYPE_WALK )
 	--Add in giving of toolgun/physgun
+end
+
+local function GetRand(A) 
+	local T,I = Utl:TableRand(A.Teleports)
+	if IsValid(T) then
+		return T
+	else
+		table.remove(A.Teleports,I)
+		return GetRand(A)
+	end
+end
+
+--Add support to detect other missing components such as reactors/engines
+function SubSpaces.CompileShip(Ply)
+	local ShipSpace = Ply:Nick()
+	if SubSpaces.SubSpaceTab(ShipSpace).ID and Ply:GetSubSpace() == ShipSpace then
+		local Anchor = SubSpaces.GetSubSpaceEntity(ShipSpace)
+		Anchor:ShipCoreInit() Anchor:ScanModules()
+		if table.Count(Anchor.Teleports)>0 then
+			local Tele = GetRand(Anchor)
+			Ply:SetPos(Tele:GetPos()+Vector(0,0,50))
+			Ply:SetMoveType( MOVETYPE_WALK )
+			
+			SubSpaces:SSSetPos(ShipSpace,DryDockPos)
+			SubSpaces:UpdateSubSpaceRendering(ShipSpace,false)
+			Anchor.Compiled = true
+		else
+			--Inform the player they do not have teleport pads.
+		end
+	else
+		--Inform the player they cant compile ships they dont own.
+	end
 end
 
 LoadFile("singularity/data/userinterfaces/shipconsole.lua",1)

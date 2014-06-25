@@ -14,6 +14,17 @@ Utl.Effect = Utl.Effect or {} --Create a table to store effect data in.
 local DTable = Utl.DebugTable --Localise the debug storage.
 local HTable = Utl.Hooks --Localise the hook table for speed.
 
+function Utl:TableRand(Table)
+	local Rand = math.random(1,table.Count(Table))
+	local I = 1
+	for n, v in pairs( Table ) do	
+		if I == Rand then
+			return v.E,I
+		end
+		I=I+1
+	end
+end
+
 --[[----------------------------------------------------
 Debugging Functions.
 ----------------------------------------------------]]--
@@ -135,7 +146,6 @@ if(SERVER)then
 	Utl:MakeHook("OnEntityCreated")
 	Utl:MakeHook("PlayerSpawn")
 	Utl:MakeHook("PlayerDisconnected")
-	Utl:MakeHook("PlayerConnect")
 	Utl:MakeHook("PlayerConnect")
 	Utl:MakeHook("OnRemove")
 	Utl:MakeHook("Shutdown")

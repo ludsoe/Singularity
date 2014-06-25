@@ -48,7 +48,7 @@ if SERVER then
 	function Singularity.MenuCore.OpenPanel( ply )
 		ply:ConCommand( "openjupitermenu" )
 	end
-	hook.Add( "ShowSpare1", "bindtoSpare1", Singularity.MenuCore.OpenPanel )
+	hook.Add( "ShowSpare2", "bindtoSpare2", Singularity.MenuCore.OpenPanel )
 
 	function SendDebugTypes(ply)
 		for k, log in pairs(DebugLogs) do

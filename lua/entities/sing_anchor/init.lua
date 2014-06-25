@@ -25,15 +25,18 @@ end
 function ENT:ShipCoreInit()
     self.Modules,self.ModThink = {},{}
 		
-	self.SyncData = {}
+	self.SyncData = {MaxSpeed=200,MaxTurnSpeed=40}
 	self.OldData = {}
+	self.Teleports = {}
 	
 	local Cur = CurTime()
     self.Next = {Scan=Cur,Trans=Cur} 	
 	
 	self.LastAttacked = 0
 	self.MassCenter = self:WorldToLocal(phy:GetMassCenter())
-	self.Compiled = true
+	
+	self.SubSpaceDat = SubSpaces.SubSpaceTab(self:GetSubSpace())--Create a local link to our subspace table.
+	self.SubSpaceNam = self:GetSubSpace()
 end
  
 function ENT:Think()
@@ -59,6 +62,20 @@ function ENT:Think()
 	end
 end
 
+function ENT:EngineVVel(Vec)
+	local Vel = self.SubSpaceDat.VVel
+	if (Vel+Vec):Length()<self.SyncData.MaxSpeed then
+		SubSpaces:SSSetVVel(self.SubSpaceNam,Vel+Vec)
+	end
+end
+
+function ENT:EngineAVel(Ang)
+	local AngV = self.SubSpaceDat.VVel
+	if (Vector(AngV.p,AngV.y,AngV.r)+Vector(Ang.p,Ang.y,Ang.r)):Length()<self.SyncData.MaxTurnSpeed then
+		SubSpaces:SSSetAVel(self.SubSpaceNam,AngV+Ang)
+	end
+end
+
 function ENT:ScanModules()
 	local Props = SubSpaces.SubSpaceTab(self:GetSubSpace())
 	
@@ -66,6 +83,7 @@ function ENT:ScanModules()
 		if ent.IsModule then
 			local ID = ent:EntIndex()
 			if not IsValid(self.Modules[ID]) then
+				if ent.ModuleInstall then ent:ModuleInstall(self) end
 				self.Modules[ID] = ent
 				table.insert(self.ModThink,{E=ent,I=ID,P=ent:GetPriority()})
 			end

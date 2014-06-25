@@ -73,11 +73,11 @@ Tool.Open = function(Menu,Tab)
 	local C,M,L = vgui.Create( "DPanel" ),vgui.Create( "DPanel" ),vgui.Create( "DPanel" )
 	local Sheet = Singularity.MenuCore.CreatePSheet(Menu,{x=520,y=355},{x=0,y=0})
 	Sheet:AddSheet( "Generic" , C , "icon16/wrench.png" , false, false, "Generic Devices" )
-	Sheet:AddSheet( "Shields" , M , "icon16/shield.png" , false, false, "Shield Emitters" )
-	Sheet:AddSheet( "Reactors" , L , "icon16/lightning.png" , false, false, "Reactors" )
+	Sheet:AddSheet( "Engines" , M , "icon16/shield.png" , false, false, "Engine Cores" )
+	Sheet:AddSheet( "Reactors" , L , "icon16/lightning.png" , false, false, "Reactor Cores" )
 
 	MakePage(C,"Generic",Tab)
-	MakePage(M,"Shields",Tab)
+	MakePage(M,"Engines",Tab)
 	MakePage(L,"Reactors",Tab)
 end --This is clientside only, called when the tool is selected.
 

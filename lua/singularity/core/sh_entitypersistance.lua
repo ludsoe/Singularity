@@ -36,7 +36,6 @@ if(SERVER)then
 		if Ent.PreEntityCopy then
 			Ent:PreEntityCopy()
 			Data.W=Ent.EntityMods
-			PrintTable(Data.W)
 		end
 		
 		Props[Ent:EntIndex()]=Data

@@ -67,7 +67,7 @@ if(SERVER)then
 			print("Generating "..Name.." subspace")
 			local SubSpace = {}
 			
-			SubSpace = {ID=Name, Owner = "World", Title = Name , Pos = Vect, VVel = Vector(), AVel=Angle(), Ang = Ang, Entitys={}, Importance = Type, Bubble={}, Size = 0}
+			SubSpace = {ID=Name, Owner = "World", Title = Name , Pos = Vect, VVel = Vector(), AVel=Angle(), Ang = Ang, Entitys={}, Importance = Type, Bubble={}, Size = 0, DryDock=false}
 			SubSpaces.SubSpaces[Name]=SubSpace
 			SubSpaces.SubSpaceKeys[tostring(Vect)]=SubSpaces.SubSpaces[Name] --Vector to subspace key link.
 			

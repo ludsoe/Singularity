@@ -32,7 +32,7 @@ function EFFECT:Init(data)
 	
 	Pos=Anchor:LocalToWorld(Pos)
 	
-	SubPos:Rotate(PlyAng)
+	SubPos:Rotate(-PlyAng)
 	local Spot = (Pos+SubPos)/SubSpaces.Scale
 		
 	self:SetPos(SubSpaces.SkyBox+Spot)

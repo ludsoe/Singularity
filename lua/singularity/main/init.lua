@@ -12,6 +12,7 @@ local MainF = "singularity/main/"
 local ScorF = "singularity/scoreboard/"
 
 Singularity.LoadFile(ScorF.."init.lua",1)
+Singularity.LoadFile(MainF.."pda.lua",1)
 
 if SERVER then
 	Utl:SetupThinkHook("SpawnStation",0,1,function() --Because running it first things first caused crashs.

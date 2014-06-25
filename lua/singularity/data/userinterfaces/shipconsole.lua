@@ -5,6 +5,10 @@ if(SERVER)then
 	Utl:HookNet("enterdrydock","",function(D,P)
 		SubSpaces.OpenDryDockSpace(P)
 	end)
+	
+	Utl:HookNet("compileship","",function(D,P)
+		SubSpaces.CompileShip(P)
+	end)
 else
 	local Console = {}
 	local Tabs = {}
@@ -40,7 +44,8 @@ else
 		
 		Singularity.MenuCore.CreateButton(P,{x=80,y=50},{x=0,y=0},"Enter DryDock",function() 
 			local Data = {Name="enterdrydock",Val=1,Dat={}}
-			NDat.AddData(Data) 
+			NDat.AddData(Data)
+			Console.Base:Remove()
 		end)
 	end
 	

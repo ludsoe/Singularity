@@ -50,6 +50,8 @@ local ModPath = "singularity/data/shipmodules/"
 LoadFile(ModPath.."shipconsole.lua",1)
 LoadFile(ModPath.."reactor.lua",1)
 LoadFile(ModPath.."teleportconsole.lua",1)
+LoadFile(ModPath.."teleplatform.lua",1)
+
 
 
 

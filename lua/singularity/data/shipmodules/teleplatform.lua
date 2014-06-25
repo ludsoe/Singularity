@@ -12,6 +12,11 @@ local Data = {
 	Extra = {}
 }
 
+--Lets insert ourselfs into the cores teleporter list!
+Data.Install = function(self,Core)
+	table.insert(Core.Teleports,self)
+end
+
 Singularity.ShipMods.MakeModule(Data)
 
 
