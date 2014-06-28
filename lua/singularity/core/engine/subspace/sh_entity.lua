@@ -7,15 +7,15 @@ local ENT,PLY = FindMetaTable( "Entity" ),FindMetaTable( "Player" )
 
 function ENT:SetSubSpace( subspace )
 	local OldSub = self:GetSubSpace()
-	if(OldSub==subspace)then return end --Dont run if were trying to change to the same subspace
+	if OldSub==subspace then return end --Dont run if were trying to change to the same subspace
 
-	if(OldSub~="")then
+	if OldSub~="" then
 		SubSpaces.SubSpaces[OldSub].Entitys[self:EntIndex()]=nil
 	end
 	SubSpaces.SubSpaces[subspace].Entitys[self:EntIndex()]=self
 
 	self:SetNWString( "SubSpace", subspace )
-	if ( !self.UsingCamera ) then self:SetViewSubSpace( subspace ) end
+	if not self.UsingCamera then self:SetViewSubSpace( subspace ) end
 end
 
 function ENT:SetViewSubSpace( subspace )

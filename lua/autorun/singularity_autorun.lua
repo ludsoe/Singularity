@@ -9,7 +9,7 @@ local Singularity = Singularity --Localise the global table for speed.
 Singularity.Settings = Singularity.Settings or {} --Setup our settings table.
 Singularity.SettingsName = "singularitysettings"
 Singularity.SaveDataPath = "singularity/"
-Singularity.Version = "InDev V:11"
+Singularity.Version = "InDev V:32"
 Singularity.DebugMode = "Verbose" 
 Singularity.EnableMenu = true --Debug Menu
 
@@ -19,6 +19,7 @@ local LoadFile = Singularity.LoadFile --Lel Speed.
 local CoreF,DataF,MainF = "singularity/core/","singularity/data/","singularity/main/"
 
 --Shared
+LoadFile("singularity/variables.lua",1)
 LoadFile("singularity/menusys.lua",1)
 LoadFile("singularity/debug.lua",1)
 LoadFile(CoreF.."sh_utility.lua",1)

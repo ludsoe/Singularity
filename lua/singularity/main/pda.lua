@@ -11,8 +11,8 @@ else
 	local PDA,Pages = {},{}
 	
 	function LoadPDAPages()
-		local A = SubSpaces.GetSubSpaceEntity(LocalPlayer():GetSubSpace())
-		if A and A.DryDock then Pages["DryDock"](A) end
+		if SubSpaces.SubSpaceTab(LocalPlayer():GetSubSpace() or "").DryDock then Pages["DryDock"]() end
+		Pages["Stats"]()
 	end
 	
 	function AccessPDA()
@@ -30,13 +30,19 @@ else
 	
 	Utl:HookNet("open_pda","",function(D) AccessPDA() end)
 	
-	Pages["DryDock"]=function(A)
+	Pages["DryDock"]=function()
 		local P = vgui.Create( "DPanel" )
-		Sheet:AddSheet( "Ship Editor" , P , "icon16/shield.png" , false, false, "Ship Editor Functions" )
+		PDA.Sheet:AddSheet( "Ship Editor" , P , "icon16/shield.png" , false, false, "Ship Editor Functions" )
 		
 		Singularity.MenuCore.CreateButton(P,{x=80,y=50},{x=0,y=0},"Compile Ship",function() 
 			local Data = {Name="compileship",Val=1,Dat={}}
 			NDat.AddData(Data)
-		end)		
+			PDA.Base:Remove()
+		end)
 	end
+	
+	Pages["Stats"]=function(A)
+		local P = vgui.Create( "DPanel" )
+		PDA.Sheet:AddSheet( "Player Stats" , P , "icon16/shield.png" , false, false, "Your Stats." )	
+	end	
 end		 

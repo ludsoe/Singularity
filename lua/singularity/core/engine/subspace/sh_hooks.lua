@@ -17,9 +17,11 @@ end
 hook.Add( "ShouldCollide", "LayerCollide", ShouldEntitiesCollide )
 
 if(SERVER)then
+	local IG = Singularity.IgnoreClasses
+
 	function SubSpaces.EntitySpawnLayer( ply, ent ) ent:SetSubSpace( ply:GetSubSpace() ) ent:SetCustomCollisionCheck()  end
 	function SubSpaces.EntitySpawnLayerProxy( ply, mdl, ent ) SubSpaces.EntitySpawnLayer( ply, ent ) end
-	function SubSpaces.OnEntityCreated( ent ) ent:SetCustomCollisionCheck() if ent:GetSubSpace()=="" then ent:SetSubSpace(SubSpaces.MainSpace) end end	
+	function SubSpaces.OnEntityCreated( ent ) if IG[ent:GetClass()] then return end ent:SetCustomCollisionCheck() if ent:GetSubSpace()=="" then ent:SetSubSpace(SubSpaces.MainSpace) end end	
 	function SubSpaces.OnEntityRemove( ent ) SubSpaces.SubSpaces[ent:GetSubSpace()].Entitys[ent:EntIndex()]=nil end
 	
 	function SubSpaces.InitializePlayerLayer( ply ) 

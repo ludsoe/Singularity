@@ -25,20 +25,16 @@ end
 function ENT:ShipCoreInit()
     self.Modules,self.ModThink = {},{}
 		
-	self.SyncData = {MaxSpeed=200,MaxTurnSpeed=40}
-	self.OldData = {}
-	self.Teleports = {}
+	self.SyncData = {Reactor=0,MaxSpeed=200,MaxTurnSpeed=40}
+	self.OldData,self.Teleports = {},{}
 	
 	local Cur = CurTime()
     self.Next = {Scan=Cur,Trans=Cur} 	
 	
 	self.LastAttacked = 0
-	self.MassCenter = self:WorldToLocal(phy:GetMassCenter())
-	
-	self.SubSpaceDat = SubSpaces.SubSpaceTab(self:GetSubSpace())--Create a local link to our subspace table.
-	self.SubSpaceNam = self:GetSubSpace()
+	self.MassCenter = Vector(0,0,0)
 end
- 
+
 function ENT:Think()
 	if self.IsDead or not self.Compiled then return end --We DEAD!
 
@@ -47,12 +43,14 @@ function ENT:Think()
 		self.Next.Trans = CurTime()+0.2	  
 	end
 	
+	self.SyncData.Reactor = 0
 	for id, mod in pairs( self.ModThink ) do
-		if mod and mod:IsValid() then
-			if mod.ModuleThink then
-				if (mod.NextModThink or 0) < CurTime() then
-					if mod:ModuleThink(self) then
-						mod.NextModThink = CurTime() + mod.ThinkSpeed
+		local Ent = mod.E
+		if IsValid(Ent) then
+			if Ent.ModuleThink then
+				if (Ent.NextModThink or 0) < CurTime() then
+					if Ent:ModuleThink(self) then
+						Ent.NextModThink = CurTime() + Ent.ThinkSpeed
 					end
 				end
 			end
@@ -62,6 +60,9 @@ function ENT:Think()
 	end
 end
 
+function ENT:UsePower(Need) return self.SyncData.Reactor >= Need end
+function ENT:GenPower(Amt) self.SyncData.Reactor = self.SyncData.Reactor+Amt end
+
 function ENT:EngineVVel(Vec)
 	local Vel = self.SubSpaceDat.VVel
 	if (Vel+Vec):Length()<self.SyncData.MaxSpeed then
@@ -70,27 +71,29 @@ function ENT:EngineVVel(Vec)
 end
 
 function ENT:EngineAVel(Ang)
-	local AngV = self.SubSpaceDat.VVel
+	local AngV = self.SubSpaceDat.AVel
 	if (Vector(AngV.p,AngV.y,AngV.r)+Vector(Ang.p,Ang.y,Ang.r)):Length()<self.SyncData.MaxTurnSpeed then
 		SubSpaces:SSSetAVel(self.SubSpaceNam,AngV+Ang)
 	end
 end
 
 function ENT:ScanModules()
-	local Props = SubSpaces.SubSpaceTab(self:GetSubSpace())
+	local Props = self.SubSpaceDat.Entitys
 	
 	for n, ent in pairs( Props ) do
 		if ent.IsModule then
 			local ID = ent:EntIndex()
 			if not IsValid(self.Modules[ID]) then
-				if ent.ModuleInstall then ent:ModuleInstall(self) end
+				ent:ModuleInstall(self)
 				self.Modules[ID] = ent
 				table.insert(self.ModThink,{E=ent,I=ID,P=ent:GetPriority()})
 			end
 		end
 	end
 	
-	table.sort(self.ModThink, function(a, b) return a.P > b.P end)
+	if table.Count(self.ModThink)>1 then
+		table.sort(self.ModThink, function(a, b) return a.P > b.P end)
+	end
 end
 
 function ENT:TransmitData()
@@ -112,11 +115,11 @@ function ENT:TransmitData()
 		Transmit[n] = v
 	end
 		
-	local Data = {Name="SingularityCoreSync",Dat={
+	local Data = {Name="SingularityCoreSync",Val=5,Dat={
 		{N="E",T="E",V=self},
 		{N="T",T="T",V=Transmit}
 	}}
-	NDat.AddDataAll(Data)
+	Singularity.Utl.NetMan.AddDataAll(Data)
 end
 
 function ENT:TransmitAllData(Ply)

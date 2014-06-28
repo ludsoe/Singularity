@@ -8,9 +8,10 @@ NDat.Data = NDat.Data or {} -- The actual table we store data in.
 NDat.NHook = NDat.NHook or {} --The table we store net hooks in.
 
 local NumBool = function(V) if V then return 1 else return 0 end end --Bool to number.
+local BoolNum = function(V) if V>0 then return true else return false end end --Number to bool.
 
 NDat.NetDTWrite = {S=net.WriteString,E=net.WriteEntity,F=net.WriteFloat,V=net.WriteVector,A=net.WriteAngle,B=function(V) net.WriteFloat(NumBool(V)) end,T=function(T) net.WriteString(util.TableToJSON(T)) end}
-NDat.NetDTRead = {S=net.ReadString,E=net.ReadEntity,F=net.ReadFloat,V=net.ReadVector,A=net.ReadAngle,B=function() return net.ReadFloat()>0 end,T=function() return util.JSONToTable(net.ReadString()) or {} end}
+NDat.NetDTRead = {S=net.ReadString,E=net.ReadEntity,F=net.ReadFloat,V=net.ReadVector,A=net.ReadAngle,B=function() return BoolNum(net.ReadFloat()) end,T=function() return util.JSONToTable(net.ReadString()) or {} end}
 	
 --Actually sends the data out.
 function NDat.SendData(Data,Name,ply)

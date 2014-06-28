@@ -11,14 +11,11 @@ Data.WorldTip = {Capacity="ReactorCapacity"}
 Data.Setup = function(self,Data,MyData)
 	self.IsReactor = true
 	self.Capacity = MyData.Extra.Capacity
-	self:SetNWFloat("ReactorCapacity", self.Capacity)
 end
 
 Data.ThinkSpeed = 0
 Data.Think = function(self,Core)
-	local Dat = Core.SyncData
-	Dat.Reactor = Dat.Reactor+Power
-	
+	Core:GenPower(self.Capacity)
 	return true
 end
 
@@ -32,7 +29,7 @@ function Singularity.ShipMods.RegisterReactor(New,Data)
 	Singularity.ShipMods.MakeModule(table.Copy(Data))
 end
 
-local RCT = {Name="Generic Reactor",Cap=1500,MyModel="models/props_wasteland/laundry_washer003.mdl"}
+local RCT = {Name="Generic Reactor",Energy=500,MyModel="models/cerus/modbridge/misc/ls/ls_gen11a.mdl"}
 Singularity.ShipMods.RegisterReactor(RCT,Data)
 
 

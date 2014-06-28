@@ -19,7 +19,7 @@ function Utl:TableRand(Table)
 	local I = 1
 	for n, v in pairs( Table ) do	
 		if I == Rand then
-			return v.E,I
+			return v,I
 		end
 		I=I+1
 	end

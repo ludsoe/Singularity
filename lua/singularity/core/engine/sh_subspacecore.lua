@@ -43,16 +43,18 @@ function SubSpaces.GetSubSpaceEntity(subspace)
 	local Table = SubSpaces.SubSpaceTab(subspace)
 	if not Table then return end
 	if SERVER then
-		if not Table.Anchor or  Table.Anchor and not IsValid(Entity(Table.Anchor)) then
+		if not IsValid(Table.Anchor) then
 			local A = ents.Create("sing_anchor")
 			A:Spawn()
-			Table.Anchor = A:EntIndex()
+			A.SubSpaceNam = subspace
+			A.SubSpaceDat = Table
+			Table.Anchor = A
 			SubSpaces:UpdateSubSpace(Table)
 		end
 	end
 	if not Table.Anchor then return end
 	--Table.Anchor:SetAngles(Table.Ang)
-	return Entity(Table.Anchor)
+	return Table.Anchor
 end
 	
 if(SERVER)then
@@ -170,8 +172,8 @@ if(SERVER)then
 				local Match = (mpos == spos)
 				local Dist,S1,S2 = mpos:Distance(spos),subspace.Size,sub.Size
 				--print("Dist: "..Dist.." R: "..S1+S2)				
-				if  not Match and Dist<S1+S2 then
-					--print("Too Close!")
+				if not Match and Dist<S1+S2 then
+					print("Too Close! "..S1.." + "..S2)
 					local Dir = spos-mpos
 					Dir:Normalize()
 					if S1 > S2 then
@@ -192,13 +194,17 @@ if(SERVER)then
 	
 	Utl:SetupThinkHook("SubSpaceMovement",0.01,0,function() 
 		for id, subspace in pairs( SubSpaces.SubSpaces ) do
-			local Pos,Ang = subspace.Pos+(subspace.VVel/PhysMult),subspace.Ang+(Angle(subspace.AVel.p/PhysMult,subspace.AVel.y/PhysMult,subspace.AVel.r/PhysMult))
+			local Anc = SubSpaces.GetSubSpaceEntity(id)
+			if not Anc then return end
+			
+			Anc:SetAngles(subspace.Ang)
+			local Pos,Ang = subspace.Pos+(subspace.VVel/PhysMult),Anc:LocalToWorldAngles(Angle(subspace.AVel.p/PhysMult,subspace.AVel.y/PhysMult,subspace.AVel.r/PhysMult))
 			
 			Pos = SubSpaces:BubbleLoop(subspace) or Pos
 			
 			subspace.Pos,subspace.Ang = Pos,Ang
-			local Anc = SubSpaces.GetSubSpaceEntity(id)
-			if IsValid(Anc) then Anc:SetSubPos(Pos) Anc:SetSubAng(Ang) end
+			
+			Anc:SetSubPos(Pos) Anc:SetSubAng(Ang)
 		end			
 	end)
 end

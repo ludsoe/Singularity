@@ -22,16 +22,16 @@ if(SERVER)then
 		--print("syncing "..Name.." subspace")
 		local Data = {Name="subspaces_update",Val=1,Dat={
 			{N="T",T="S",V=SubSpace.Title},
-			{N="E",T="F",V=SubSpace.Anchor}
+			{N="E",T="E",V=SubSpace.Anchor}
 		}}
 		NDat.AddDataAll(Data)
 	end	
 	
-	function SubSpaces:UpdateSubSpaceRendering(SubSpace,Render)
-		local SS = SubSpaces.SubSpaces[SubSpace] if not SS then return end SS.DryDock = Render
+	function SubSpaces:SubspaceDryDockMode(SubSpace,Mode)
+		local SS = SubSpaces.SubSpaces[SubSpace] if not SS then return end SS.DryDock = Mode
 		local Data = {Name="subspaces_changerender",Val=1,Dat={
 			{N="T",T="S",V=SS.Title},
-			{N="R",T="B",V=Render}
+			{N="R",T="B",V=Mode}
 		}}
 		NDat.AddDataAll(Data)
 	end	
@@ -71,6 +71,7 @@ else
 	Utl:HookNet("subspaces_changerender","",function(D)
 		local SS = SubSpaces.SubSpaces[D.T] if not SS then return end
 		SS.DryDock=D.R
+		print("DryDock Mode for "..D.T.." set to "..tostring(D.R))
 	end)
 
 	net.Receive( "subspaces_clearall", function( length, client )

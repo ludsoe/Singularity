@@ -9,7 +9,7 @@ if(not SubSpaces.OriginalTraceLine)then SubSpaces.OriginalTraceLine = util.Trace
 function util.TraceLine( td, subspace )
 	if not subspace then if(SERVER)then subspace = "Global" else subspace = LocalPlayer():GetSubSpace() end end
 	local originalResult = SubSpaces.OriginalTraceLine( td )
-	if not IsValid(originalResult.Entity) or originalResult.Entity:GetSubSpace() == subspace or subspace=="Global") then
+	if not IsValid(originalResult.Entity) or originalResult.Entity:GetSubSpace() == subspace or subspace=="Global" then
 		return originalResult
 	else
 		if ( td.filter ) then

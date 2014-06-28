@@ -1,12 +1,8 @@
-
 local Singularity = Singularity
+local Utl = Singularity.Utl --Makes it easier to read the code.
 
-local Sync = function()
-	local Ent,Table = net.ReadEntity(),util.JSONToTable(net.ReadString())
-	Ent.SyncData = table.Merge(Ent.SyncData or {},Table)
-end
-net.Receive( "JupiterCoreSync", Sync)
-
+Utl:HookNet("SingularityCoreSync","",function(D) D.E.SyncData = table.Merge(D.E.SyncData or {},D.T) end)
+	
 function GetWorldTips()
 	local Trace = LocalPlayer():GetEyeTrace()
 	local Pos = Trace.HitPos

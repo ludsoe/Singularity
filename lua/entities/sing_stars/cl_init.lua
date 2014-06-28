@@ -18,7 +18,7 @@ function ENT:Initialize()
 end
 
 function ENT:Think()
-	self:SetAngles(-LocalPlayer():GetUniAng())
+	self:SetAngles(LocalPlayer():GetUniAng())
 end
 
 

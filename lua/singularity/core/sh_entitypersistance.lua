@@ -90,7 +90,7 @@ if(SERVER)then
 	end
 	
 	--Loads a contraption from entity data. And makes it static.
-	function Pers:LoadFromData(Vect,Data,Freeze,SubSpace,Owner)
+	function Pers:LoadFromData(Vect,Data,World,SubSpace,Owner)
 		if not Data then print("Error No data!") return end
 		local W,P,M,E,L = Data.Welds,Data.Props,Data.Meta,{},{}
 		
@@ -103,7 +103,7 @@ if(SERVER)then
 			ent:SetColor(PD.C or Color(255,255,255,255))
 			ent:SetSkin(PD.S or 1)
 			ent:SetSubSpace(SubSpace)
-			ent.UnTouchable = true
+			ent.UnTouchable = not World
 			
 			if PD.P and PD.P~=0 then
 				L[ID]=function()
@@ -114,6 +114,10 @@ if(SERVER)then
 			--Get entity persistant data.
 			if ent.SetPersData then ent:SetPersData(PD.E) end		
 			if PD.W then ent.EntityMods=PD.W end
+			
+			if IsValid(Owner) then
+				Singularity.GivePlyProp(Owner,ent)
+			end
 			
 			ent:Spawn()
 			

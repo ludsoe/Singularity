@@ -6,3 +6,5 @@ ENT.Category		= "Other"
 
 ENT.Spawnable		= true
 ENT.AdminSpawnable	= true
+
+ENT.StarField = true

@@ -1,28 +1,22 @@
 --[[------------------------------------------------------------------------------------------------------------------
 	Rendering
 ------------------------------------------------------------------------------------------------------------------]]--
-local NoDraw = {}
-NoDraw["class C_PlayerResource"]=true
-NoDraw["class C_GMODGameRulesProxy"]=true
-NoDraw["sing_anchor"]=true
-NoDraw["sing_spawn"]=true
-NoDraw["class C_RopeKeyframe"]=true
+local NR,IG = Singularity.NoRender,Singularity.IgnoreClasses
 
 function SubSpaces:SetEntityVisiblity( ent, subspace )
-	if ( ent:EntIndex() < 0 or not ent:IsValid() ) then return end
+	if ent:EntIndex() < 0 or not ent:IsValid() then return end
+	if ent.StarField then return end --Dont touch the space background
 	
 	local visible = false
 	
 	local class = ent:GetClass()
-	if NoDraw[class] then
+	if NR[class] or IG[class] then
 		Visible=true
 	else
-		if ( ent:GetOwner():IsValid() ) then
+		if IsValid(ent:GetOwner()) then
 			visible = ent:GetOwner():GetSubSpace() == subspace
-		elseif ( ent:GetClass() == "class C_RopeKeyframe" ) then
-			visible = ent:GetNWEntity( "CEnt", ent ):GetSubSpace() == subspace
 		else
-			visible = (ent:GetSubSpace() == subspace)
+			visible = ent:GetSubSpace() == subspace
 		end
 		
 		if not visible then
