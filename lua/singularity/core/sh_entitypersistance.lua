@@ -28,7 +28,7 @@ if(SERVER)then
 		if Col~=Color(255,255,255,255) then Data.C=Col end
 		
 		local Par = Ent:GetParent()
-		if Par:IsValid() then Data.P=Par:EntIndex() end
+		if IsValid(Par) then Data.P=Par:EntIndex() end
 		
 		--Get entity persistant data.
 		if Ent.GetPersData then Data.E=Ent:GetPersData() end

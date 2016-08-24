@@ -16,7 +16,7 @@ Singularity.LoadFile(MainF.."pda.lua",1)
 
 if SERVER then
 	Utl:SetupThinkHook("SpawnStation",0,1,function() --Because running it first things first caused crashs.
-		Pers:LoadFromData(Vector(0,0,0),PB["spawnstation"],false,SubSpaces.MainSpace) 
+		Pers:LoadFromData(Vector(0,0,0),PB["directionaltest"],false,SubSpaces.MainSpace) 
 		SubSpaces:Compile(SubSpaces.MainSpace) --Compile the spawn station.
 		
 		if not IsValid(Singularity.StarField) then
@@ -24,5 +24,5 @@ if SERVER then
 		end
 	end)
 	
-	SubSpaces:SSSetAVel(SubSpaces.MainSpace,Angle(0,5,0))
+	//SubSpaces:SSSetAVel(SubSpaces.MainSpace,Angle(0,5,0))
 end

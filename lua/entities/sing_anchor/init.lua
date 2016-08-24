@@ -61,7 +61,7 @@ function ENT:Think()
 end
 
 function ENT:UsePower(Need) return self.SyncData.Reactor >= Need end
-function ENT:GenPower(Amt) self.SyncData.Reactor = self.SyncData.Reactor+Amt end
+function ENT:GenPower(Amt) self.SyncData.Reactor = self.SyncData.Reactor+(Amt or 0) end
 
 function ENT:EngineVVel(Vec)
 	local Vel = self.SubSpaceDat.VVel
