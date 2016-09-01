@@ -6,7 +6,7 @@ PANEL = {}
 
 function PANEL:Init()	
 	self.OwnerButton = vgui.Create( "DImageButton", self )
-	self.OwnerButton:SetMaterial( "gui/silkicons/user" )
+	self.OwnerButton:SetMaterial( "icon16/key.png" )
 	
 	self.InfoButton = vgui.Create( "DImageButton", self )
 	self.InfoButton:SetMaterial( "icon16/package_green.png" )
@@ -57,7 +57,9 @@ function PANEL:OnMouseReleased( mc )
 	self.Selected = true
 	SubSpaces.layerList.SelectedLayer = self.SubSpace.ID
 	
-	RunConsoleCommand( "subspaces_select", self.SubSpace.ID )
+	--RunConsoleCommand( "subspaces_select", self.SubSpace.ID )
+	
+	Singularity.Utl.NetMan.AddData({Name="subspaces_player_select",Val=1,Dat={ID=self.SubSpace.ID}})
 end
 
 function PANEL:SetLayer( id, title, owner, pos)
